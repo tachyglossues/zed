@@ -284,7 +284,9 @@ impl TitleBar {
 
         let is_connecting_to_project = self
             .workspace
-            .update(cx, |workspace, cx| workspace.has_active_modal(cx))
+            .update(cx, |workspace, cx| {
+                recent_projects::is_connecting_over_ssh(workspace, cx)
+            })
             .unwrap_or(false);
 
         let room = room.read(cx);

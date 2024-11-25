@@ -278,7 +278,7 @@ pub trait Item: FocusableView + EventEmitter<Self::Event> {
         None
     }
 
-    fn breadcrumb_location(&self, _: &AppContext) -> ToolbarItemLocation {
+    fn breadcrumb_location(&self) -> ToolbarItemLocation {
         ToolbarItemLocation::Hidden
     }
 
@@ -827,7 +827,7 @@ impl<T: Item> ItemHandle for View<T> {
     }
 
     fn breadcrumb_location(&self, cx: &AppContext) -> ToolbarItemLocation {
-        self.read(cx).breadcrumb_location(cx)
+        self.read(cx).breadcrumb_location()
     }
 
     fn breadcrumbs(&self, theme: &Theme, cx: &AppContext) -> Option<Vec<BreadcrumbText>> {

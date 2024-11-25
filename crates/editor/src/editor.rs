@@ -28,6 +28,7 @@ mod hover_popover;
 mod hunk_diff;
 mod indent_guides;
 mod inlay_hint_cache;
+mod inline_completion_provider;
 pub mod items;
 mod linked_editing_ranges;
 mod lsp_ext;
@@ -74,7 +75,7 @@ use gpui::{
     div, impl_actions, point, prelude::*, px, relative, size, uniform_list, Action, AnyElement,
     AppContext, AsyncWindowContext, AvailableSpace, BackgroundExecutor, Bounds, ClipboardEntry,
     ClipboardItem, Context, DispatchPhase, ElementId, EventEmitter, FocusHandle, FocusOutEvent,
-    FocusableView, FontId, FontWeight, Global, HighlightStyle, Hsla, InteractiveText, KeyContext,
+    FocusableView, FontId, FontWeight, HighlightStyle, Hsla, InteractiveText, KeyContext,
     ListSizingBehavior, Model, ModelContext, MouseButton, PaintQuad, ParentElement, Pixels, Render,
     ScrollStrategy, SharedString, Size, StrikethroughStyle, Styled, StyledText, Subscription, Task,
     TextStyle, TextStyleRefinement, UTF16Selection, UnderlineStyle, UniformListScrollHandle, View,
@@ -86,8 +87,7 @@ pub(crate) use hunk_diff::HoveredHunk;
 use hunk_diff::{diff_hunk_to_display, ExpandedHunks};
 use indent_guides::ActiveIndentGuidesState;
 use inlay_hint_cache::{InlayHintCache, InlaySplice, InvalidationStrategy};
-pub use inline_completion::Direction;
-use inline_completion::{InlayProposal, InlineCompletionProvider, InlineCompletionProviderHandle};
+pub use inline_completion_provider::*;
 pub use items::MAX_TAB_TITLE_LEN;
 use itertools::Itertools;
 use language::{
@@ -272,6 +272,12 @@ enum DiffRowHighlight {}
 enum DocumentHighlightRead {}
 enum DocumentHighlightWrite {}
 enum InputComposition {}
+
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub enum Direction {
+    Prev,
+    Next,
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Navigated {
@@ -7364,7 +7370,7 @@ impl Editor {
             .update(cx, |buffer, cx| buffer.edit(edits, None, cx));
     }
 
-    pub fn cut_common(&mut self, cx: &mut ViewContext<Self>) -> ClipboardItem {
+    pub fn cut(&mut self, _: &Cut, cx: &mut ViewContext<Self>) {
         let mut text = String::new();
         let buffer = self.buffer.read(cx).snapshot(cx);
         let mut selections = self.selections.all::<Point>(cx);
@@ -7408,38 +7414,11 @@ impl Editor {
                 s.select(selections);
             });
             this.insert("", cx);
+            cx.write_to_clipboard(ClipboardItem::new_string_with_json_metadata(
+                text,
+                clipboard_selections,
+            ));
         });
-        ClipboardItem::new_string_with_json_metadata(text, clipboard_selections)
-    }
-
-    pub fn cut(&mut self, _: &Cut, cx: &mut ViewContext<Self>) {
-        let item = self.cut_common(cx);
-        cx.write_to_clipboard(item);
-    }
-
-    pub fn kill_ring_cut(&mut self, _: &KillRingCut, cx: &mut ViewContext<Self>) {
-        self.change_selections(None, cx, |s| {
-            s.move_with(|snapshot, sel| {
-                if sel.is_empty() {
-                    sel.end = DisplayPoint::new(sel.end.row(), snapshot.line_len(sel.end.row()))
-                }
-            });
-        });
-        let item = self.cut_common(cx);
-        cx.set_global(KillRing(item))
-    }
-
-    pub fn kill_ring_yank(&mut self, _: &KillRingYank, cx: &mut ViewContext<Self>) {
-        let (text, metadata) = if let Some(KillRing(item)) = cx.try_global() {
-            if let Some(ClipboardEntry::String(kill_ring)) = item.entries().first() {
-                (kill_ring.text().to_string(), kill_ring.metadata_json())
-            } else {
-                return;
-            }
-        } else {
-            return;
-        };
-        self.do_paste(&text, metadata, false, cx);
     }
 
     pub fn copy(&mut self, _: &Copy, cx: &mut ViewContext<Self>) {
@@ -13811,9 +13790,7 @@ impl CodeActionProvider for Model<Project> {
         range: Range<text::Anchor>,
         cx: &mut WindowContext,
     ) -> Task<Result<Vec<CodeAction>>> {
-        self.update(cx, |project, cx| {
-            project.code_actions(buffer, range, None, cx)
-        })
+        self.update(cx, |project, cx| project.code_actions(buffer, range, cx))
     }
 
     fn apply_code_action(
@@ -15173,8 +15150,5 @@ fn check_multiline_range(buffer: &Buffer, range: Range<usize>) -> Range<usize> {
         range.start..range.start
     }
 }
-
-pub struct KillRing(ClipboardItem);
-impl Global for KillRing {}
 
 const UPDATE_DEBOUNCE: Duration = Duration::from_millis(50);

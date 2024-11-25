@@ -1,3 +1,5 @@
+// Allow binary to be called Zed for a nice application menu when running executable directly
+#![allow(non_snake_case)]
 // Disable command line from opening on release mode
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -5,15 +7,16 @@ mod reliability;
 mod zed;
 
 use anyhow::{anyhow, Context as _, Result};
+use assistant_slash_command::SlashCommandRegistry;
 use chrono::Offset;
 use clap::{command, Parser};
 use cli::FORCE_CLI_MODE_ENV_VAR_NAME;
 use client::{parse_zed_link, Client, ProxySettings, UserStore};
 use collab_ui::channel_view::ChannelView;
+use context_servers::ContextServerFactoryRegistry;
 use db::kvp::{GLOBAL_KEY_VALUE_STORE, KEY_VALUE_STORE};
 use editor::Editor;
 use env_logger::Builder;
-use extension::ExtensionHostProxy;
 use fs::{Fs, RealFs};
 use futures::{future, StreamExt};
 use git::GitHostingProviderRegistry;
@@ -22,6 +25,7 @@ use gpui::{
     VisualContext,
 };
 use http_client::{read_proxy_from_env, Uri};
+use indexed_docs::IndexedDocsRegistry;
 use language::LanguageRegistry;
 use log::LevelFilter;
 use reqwest_client::ReqwestClient;
@@ -38,6 +42,7 @@ use settings::{
 };
 use simplelog::ConfigBuilder;
 use smol::process::Command;
+use snippet_provider::SnippetRegistry;
 use std::{
     env,
     fs::OpenOptions,
@@ -281,9 +286,6 @@ fn main() {
 
         OpenListener::set_global(cx, open_listener.clone());
 
-        extension::init(cx);
-        let extension_host_proxy = ExtensionHostProxy::global(cx);
-
         let client = Client::production(cx);
         cx.set_http_client(client.http_client().clone());
         let mut languages = LanguageRegistry::new(cx.background_executor().clone());
@@ -317,7 +319,6 @@ fn main() {
         let node_runtime = NodeRuntime::new(client.http_client(), rx);
 
         language::init(cx);
-        language_extension::init(extension_host_proxy.clone(), languages.clone());
         languages::init(languages.clone(), node_runtime.clone(), cx);
         let user_store = cx.new_model(|cx| UserStore::new(client.clone(), cx));
         let workspace_store = cx.new_model(|cx| WorkspaceStore::new(client.clone(), cx));
@@ -327,6 +328,7 @@ fn main() {
         zed::init(cx);
         project::Project::init(&client, cx);
         client::init(&client, cx);
+        language::init(cx);
         let telemetry = client.telemetry();
         telemetry.start(
             system_id.as_ref().map(|id| id.to_string()),
@@ -365,7 +367,6 @@ fn main() {
         AppState::set_global(Arc::downgrade(&app_state), cx);
 
         auto_update::init(client.http_client(), cx);
-        auto_update_ui::init(cx);
         reliability::init(
             client.http_client(),
             system_id.as_ref().map(|id| id.to_string()),
@@ -376,11 +377,6 @@ fn main() {
 
         SystemAppearance::init(cx);
         theme::init(theme::LoadThemes::All(Box::new(Assets)), cx);
-        theme_extension::init(
-            extension_host_proxy.clone(),
-            ThemeRegistry::global(cx),
-            cx.background_executor().clone(),
-        );
         command_palette::init(cx);
         let copilot_language_server_id = app_state.languages.next_language_server_id();
         copilot::init(
@@ -391,8 +387,7 @@ fn main() {
             cx,
         );
         supermaven::init(app_state.client.clone(), cx);
-        language_model::init(cx);
-        language_models::init(
+        language_model::init(
             app_state.user_store.clone(),
             app_state.client.clone(),
             app_state.fs.clone(),
@@ -406,15 +401,23 @@ fn main() {
             stdout_is_a_pty(),
             cx,
         );
-        assistant2::init(cx);
         assistant_hints::init(cx);
         repl::init(
             app_state.fs.clone(),
             app_state.client.telemetry().clone(),
             cx,
         );
+        let api = extensions_ui::ConcreteExtensionRegistrationHooks::new(
+            ThemeRegistry::global(cx),
+            SlashCommandRegistry::global(cx),
+            IndexedDocsRegistry::global(cx),
+            SnippetRegistry::global(cx),
+            app_state.languages.clone(),
+            ContextServerFactoryRegistry::global(cx),
+            cx,
+        );
         extension_host::init(
-            extension_host_proxy,
+            api,
             app_state.fs.clone(),
             app_state.client.clone(),
             app_state.node_runtime.clone(),
@@ -457,7 +460,6 @@ fn main() {
         call::init(app_state.client.clone(), app_state.user_store.clone(), cx);
         notifications::init(app_state.client.clone(), app_state.user_store.clone(), cx);
         collab_ui::init(&app_state, cx);
-        vcs_menu::init(cx);
         feedback::init(cx);
         markdown_preview::init(cx);
         welcome::init(cx);

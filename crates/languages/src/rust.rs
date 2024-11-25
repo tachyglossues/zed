@@ -14,7 +14,8 @@ use std::{
     any::Any,
     borrow::Cow,
     path::{Path, PathBuf},
-    sync::{Arc, LazyLock},
+    sync::Arc,
+    sync::LazyLock,
 };
 use task::{TaskTemplate, TaskTemplates, TaskVariables, VariableName};
 use util::{fs::remove_matching, maybe, ResultExt};
@@ -76,7 +77,6 @@ impl LspAdapter for RustLspAdapter {
     async fn check_if_user_installed(
         &self,
         delegate: &dyn LspAdapterDelegate,
-        _: Arc<dyn LanguageToolchainStore>,
         _: &AsyncAppContext,
     ) -> Option<LanguageServerBinary> {
         let path = delegate.which("rust-analyzer".as_ref()).await?;
@@ -639,7 +639,7 @@ fn package_name_and_bin_name_from_abs_path(
     abs_path: &Path,
     project_env: Option<&HashMap<String, String>>,
 ) -> Option<(String, String)> {
-    let mut command = util::command::new_std_command("cargo");
+    let mut command = std::process::Command::new("cargo");
     if let Some(envs) = project_env {
         command.envs(envs);
     }
@@ -685,10 +685,11 @@ fn human_readable_package_name(
     package_directory: &Path,
     project_env: Option<&HashMap<String, String>>,
 ) -> Option<String> {
-    let mut command = util::command::new_std_command("cargo");
+    let mut command = std::process::Command::new("cargo");
     if let Some(envs) = project_env {
         command.envs(envs);
     }
+
     let pkgid = String::from_utf8(
         command
             .current_dir(package_directory)

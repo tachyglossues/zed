@@ -5,6 +5,7 @@ pub mod assistant_settings;
 mod context;
 pub mod context_store;
 mod inline_assistant;
+mod model_selector;
 mod patch;
 mod prompt_library;
 mod prompts;
@@ -32,10 +33,12 @@ use feature_flags::FeatureFlagAppExt;
 use fs::Fs;
 use gpui::impl_actions;
 use gpui::{actions, AppContext, Global, SharedString, UpdateGlobal};
+use indexed_docs::IndexedDocsRegistry;
 pub(crate) use inline_assistant::*;
 use language_model::{
     LanguageModelId, LanguageModelProviderId, LanguageModelRegistry, LanguageModelResponseMessage,
 };
+pub(crate) use model_selector::*;
 pub use patch::*;
 pub use prompts::PromptBuilder;
 use prompts::PromptLoadingParams;
@@ -272,7 +275,7 @@ pub fn init(
         client.telemetry().clone(),
         cx,
     );
-    indexed_docs::init(cx);
+    IndexedDocsRegistry::init_global(cx);
 
     CommandPaletteFilter::update_global(cx, |filter, _cx| {
         filter.hide_namespace(Assistant::NAMESPACE);

@@ -1,5 +1,4 @@
 pub mod extension_builder;
-mod extension_host_proxy;
 mod extension_manifest;
 mod types;
 
@@ -10,18 +9,12 @@ use ::lsp::LanguageServerName;
 use anyhow::{anyhow, bail, Context as _, Result};
 use async_trait::async_trait;
 use fs::normalize_path;
-use gpui::{AppContext, Task};
+use gpui::Task;
 use language::LanguageName;
 use semantic_version::SemanticVersion;
 
-pub use crate::extension_host_proxy::*;
 pub use crate::extension_manifest::*;
 pub use crate::types::*;
-
-/// Initializes the `extension` crate.
-pub fn init(cx: &mut AppContext) {
-    ExtensionHostProxy::default_global(cx);
-}
 
 #[async_trait]
 pub trait WorktreeDelegate: Send + Sync + 'static {
@@ -30,10 +23,6 @@ pub trait WorktreeDelegate: Send + Sync + 'static {
     async fn read_text_file(&self, path: PathBuf) -> Result<String>;
     async fn which(&self, binary_name: String) -> Option<String>;
     async fn shell_env(&self) -> Vec<(String, String)>;
-}
-
-pub trait ProjectDelegate: Send + Sync + 'static {
-    fn worktree_ids(&self) -> Vec<u64>;
 }
 
 pub trait KeyValueStoreDelegate: Send + Sync + 'static {
@@ -97,12 +86,6 @@ pub trait Extension: Send + Sync + 'static {
         arguments: Vec<String>,
         worktree: Option<Arc<dyn WorktreeDelegate>>,
     ) -> Result<SlashCommandOutput>;
-
-    async fn context_server_command(
-        &self,
-        context_server_id: Arc<str>,
-        project: Arc<dyn ProjectDelegate>,
-    ) -> Result<Command>;
 
     async fn suggest_docs_packages(&self, provider: Arc<str>) -> Result<Vec<String>>;
 

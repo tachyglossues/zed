@@ -1,7 +1,6 @@
 use std::{ops::ControlFlow, path::PathBuf, sync::Arc};
 
 use crate::{default_working_directory, TerminalView};
-use breadcrumbs::Breadcrumbs;
 use collections::{HashMap, HashSet};
 use db::kvp::KEY_VALUE_STORE;
 use futures::future::join_all;
@@ -139,11 +138,8 @@ impl TerminalPanel {
                 ControlFlow::Break(())
             });
             let buffer_search_bar = cx.new_view(search::BufferSearchBar::new);
-            let breadcrumbs = cx.new_view(|_| Breadcrumbs::new());
-            pane.toolbar().update(cx, |toolbar, cx| {
-                toolbar.add_item(buffer_search_bar, cx);
-                toolbar.add_item(breadcrumbs, cx);
-            });
+            pane.toolbar()
+                .update(cx, |toolbar, cx| toolbar.add_item(buffer_search_bar, cx));
             pane
         });
         let subscriptions = vec![
@@ -222,7 +218,7 @@ impl TerminalPanel {
                                         // context menu will be gone the moment we spawn the modal.
                                         .action(
                                             "Spawn task",
-                                            zed_actions::Spawn::modal().boxed_clone(),
+                                            tasks_ui::Spawn::modal().boxed_clone(),
                                         )
                                 });
 

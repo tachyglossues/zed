@@ -19,8 +19,11 @@ use serde_json::{json, value::RawValue, Value};
 use smol::{
     channel,
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
-    process::Child,
+    process::{self, Child},
 };
+
+#[cfg(target_os = "windows")]
+use smol::process::windows::CommandExt;
 
 use std::{
     ffi::{OsStr, OsString},
@@ -343,21 +346,23 @@ impl LanguageServer {
             &binary.arguments
         );
 
-        let mut server = util::command::new_smol_command(&binary.path)
+        let mut command = process::Command::new(&binary.path);
+        command
             .current_dir(working_dir)
             .args(&binary.arguments)
             .envs(binary.env.unwrap_or_default())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
-            .kill_on_drop(true)
-            .spawn()
-            .with_context(|| {
-                format!(
-                    "failed to spawn command. path: {:?}, working directory: {:?}, args: {:?}",
-                    binary.path, working_dir, &binary.arguments
-                )
-            })?;
+            .kill_on_drop(true);
+        #[cfg(windows)]
+        command.creation_flags(windows::Win32::System::Threading::CREATE_NO_WINDOW.0);
+        let mut server = command.spawn().with_context(|| {
+            format!(
+                "failed to spawn command. path: {:?}, working directory: {:?}, args: {:?}",
+                binary.path, working_dir, &binary.arguments
+            )
+        })?;
 
         let stdin = server.stdin.take().unwrap();
         let stdout = server.stdout.take().unwrap();

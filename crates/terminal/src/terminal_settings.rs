@@ -21,7 +21,7 @@ pub enum TerminalDockPosition {
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct Toolbar {
-    pub breadcrumbs: bool,
+    pub title: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -286,14 +286,10 @@ pub enum WorkingDirectory {
 // Toolbar related settings
 #[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
 pub struct ToolbarContent {
-    /// Whether to display the terminal title in breadcrumbs inside the terminal pane.
-    /// Only shown if the terminal title is not empty.
-    ///
-    /// The shell running in the terminal needs to be configured to emit the title.
-    /// Example: `echo -e "\e]2;New Title\007";`
+    /// Whether to display the terminal title in its toolbar.
     ///
     /// Default: true
-    pub breadcrumbs: Option<bool>,
+    pub title: Option<bool>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]

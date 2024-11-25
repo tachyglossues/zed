@@ -611,7 +611,12 @@ impl LocalLspStore {
             Some(worktree_path)
         })?;
 
-        let mut child = util::command::new_smol_command(command);
+        let mut child = smol::process::Command::new(command);
+        #[cfg(target_os = "windows")]
+        {
+            use smol::process::windows::CommandExt;
+            child.creation_flags(windows::Win32::System::Threading::CREATE_NO_WINDOW.0);
+        }
 
         if let Some(buffer_env) = buffer.env.as_ref() {
             child.envs(buffer_env);
@@ -2015,7 +2020,6 @@ impl LspStore {
         &mut self,
         buffer_handle: &Model<Buffer>,
         range: Range<Anchor>,
-        kinds: Option<Vec<CodeActionKind>>,
         cx: &mut ModelContext<Self>,
     ) -> Task<Result<Vec<CodeAction>>> {
         if let Some((upstream_client, project_id)) = self.upstream_client() {
@@ -2029,7 +2033,7 @@ impl LspStore {
                 request: Some(proto::multi_lsp_query::Request::GetCodeActions(
                     GetCodeActions {
                         range: range.clone(),
-                        kinds: kinds.clone(),
+                        kinds: None,
                     }
                     .to_proto(project_id, buffer_handle.read(cx)),
                 )),
@@ -2055,7 +2059,7 @@ impl LspStore {
                         .map(|code_actions_response| {
                             GetCodeActions {
                                 range: range.clone(),
-                                kinds: kinds.clone(),
+                                kinds: None,
                             }
                             .response_from_proto(
                                 code_actions_response,
@@ -2080,7 +2084,7 @@ impl LspStore {
                 Some(range.start),
                 GetCodeActions {
                     range: range.clone(),
-                    kinds: kinds.clone(),
+                    kinds: None,
                 },
                 cx,
             );
@@ -5523,16 +5527,10 @@ impl LspStore {
                 .unwrap_or_default(),
             allow_binary_download,
         };
-        let toolchains = self.toolchain_store(cx);
         cx.spawn(|_, mut cx| async move {
             let binary_result = adapter
                 .clone()
-                .get_language_server_command(
-                    delegate.clone(),
-                    toolchains,
-                    lsp_binary_options,
-                    &mut cx,
-                )
+                .get_language_server_command(delegate.clone(), lsp_binary_options, &mut cx)
                 .await;
 
             delegate.update_status(adapter.name.clone(), LanguageServerBinaryStatus::None);
@@ -7789,7 +7787,6 @@ impl LspAdapter for SshLspAdapter {
     async fn check_if_user_installed(
         &self,
         _: &dyn LspAdapterDelegate,
-        _: Arc<dyn LanguageToolchainStore>,
         _: &AsyncAppContext,
     ) -> Option<LanguageServerBinary> {
         Some(self.binary.clone())
@@ -7938,7 +7935,7 @@ impl LspAdapterDelegate for LocalLspAdapterDelegate {
         };
 
         let env = self.shell_env().await;
-        let output = util::command::new_smol_command(&npm)
+        let output = smol::process::Command::new(&npm)
             .args(["root", "-g"])
             .envs(env)
             .current_dir(local_package_directory)
@@ -7972,7 +7969,7 @@ impl LspAdapterDelegate for LocalLspAdapterDelegate {
 
     async fn try_exec(&self, command: LanguageServerBinary) -> Result<()> {
         let working_dir = self.worktree_root_path();
-        let output = util::command::new_smol_command(&command.path)
+        let output = smol::process::Command::new(&command.path)
             .args(command.arguments)
             .envs(command.env.clone().unwrap_or_default())
             .current_dir(working_dir)

@@ -17,9 +17,9 @@ use crate::{
     ContextEvent, ContextId, ContextStore, ContextStoreEvent, CopyCode, CycleMessageRole,
     DeployHistory, DeployPromptLibrary, Edit, InlineAssistant, InsertDraggedFiles,
     InsertIntoEditor, InvokedSlashCommandId, InvokedSlashCommandStatus, Message, MessageId,
-    MessageMetadata, MessageStatus, NewContext, ParsedSlashCommand, PendingSlashCommandStatus,
-    QuoteSelection, RemoteContextMetadata, RequestType, SavedContextMetadata, Split, ToggleFocus,
-    ToggleModelSelector,
+    MessageMetadata, MessageStatus, ModelPickerDelegate, ModelSelector, NewContext,
+    ParsedSlashCommand, PendingSlashCommandStatus, QuoteSelection, RemoteContextMetadata,
+    RequestType, SavedContextMetadata, Split, ToggleFocus, ToggleModelSelector,
 };
 use anyhow::Result;
 use assistant_slash_command::{SlashCommand, SlashCommandOutputSection};
@@ -50,12 +50,11 @@ use indexed_docs::IndexedDocsStore;
 use language::{
     language_settings::SoftWrap, BufferSnapshot, LanguageRegistry, LspAdapterDelegate, ToOffset,
 };
-use language_model::{LanguageModelImage, LanguageModelToolUse};
 use language_model::{
-    LanguageModelProvider, LanguageModelProviderId, LanguageModelRegistry, Role,
-    ZED_CLOUD_PROVIDER_ID,
+    provider::cloud::PROVIDER_ID, LanguageModelProvider, LanguageModelProviderId,
+    LanguageModelRegistry, Role,
 };
-use language_model_selector::{LanguageModelPickerDelegate, LanguageModelSelector};
+use language_model::{LanguageModelImage, LanguageModelToolUse};
 use multi_buffer::MultiBufferRow;
 use picker::{Picker, PickerDelegate};
 use project::lsp_store::LocalLspAdapterDelegate;
@@ -143,7 +142,7 @@ pub struct AssistantPanel {
     languages: Arc<LanguageRegistry>,
     fs: Arc<dyn Fs>,
     subscriptions: Vec<Subscription>,
-    model_selector_menu_handle: PopoverMenuHandle<Picker<LanguageModelPickerDelegate>>,
+    model_selector_menu_handle: PopoverMenuHandle<Picker<ModelPickerDelegate>>,
     model_summary_editor: View<Editor>,
     authenticate_provider_task: Option<(LanguageModelProviderId, Task<()>)>,
     configuration_subscription: Option<Subscription>,
@@ -665,7 +664,7 @@ impl AssistantPanel {
         // If we're signed out and don't have a provider configured, or we're signed-out AND Zed.dev is
         // the provider, we want to show a nudge to sign in.
         let show_zed_ai_notice = client_status.is_signed_out()
-            && active_provider.map_or(true, |provider| provider.id().0 == ZED_CLOUD_PROVIDER_ID);
+            && active_provider.map_or(true, |provider| provider.id().0 == PROVIDER_ID);
 
         self.show_zed_ai_notice = show_zed_ai_notice;
         cx.notify();
@@ -4458,13 +4457,13 @@ pub struct ContextEditorToolbarItem {
     fs: Arc<dyn Fs>,
     active_context_editor: Option<WeakView<ContextEditor>>,
     model_summary_editor: View<Editor>,
-    model_selector_menu_handle: PopoverMenuHandle<Picker<LanguageModelPickerDelegate>>,
+    model_selector_menu_handle: PopoverMenuHandle<Picker<ModelPickerDelegate>>,
 }
 
 impl ContextEditorToolbarItem {
     pub fn new(
         workspace: &Workspace,
-        model_selector_menu_handle: PopoverMenuHandle<Picker<LanguageModelPickerDelegate>>,
+        model_selector_menu_handle: PopoverMenuHandle<Picker<ModelPickerDelegate>>,
         model_summary_editor: View<Editor>,
     ) -> Self {
         Self {
@@ -4560,17 +4559,8 @@ impl Render for ContextEditorToolbarItem {
             //         .map(|remaining_items| format!("Files to scan: {}", remaining_items))
             // })
             .child(
-                LanguageModelSelector::new(
-                    {
-                        let fs = self.fs.clone();
-                        move |model, cx| {
-                            update_settings_file::<AssistantSettings>(
-                                fs.clone(),
-                                cx,
-                                move |settings, _| settings.set_model(model.clone()),
-                            );
-                        }
-                    },
+                ModelSelector::new(
+                    self.fs.clone(),
                     ButtonLike::new("active-model")
                         .style(ButtonStyle::Subtle)
                         .child(

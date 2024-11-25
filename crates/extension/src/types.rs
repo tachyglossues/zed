@@ -10,7 +10,6 @@ pub use slash_command::*;
 pub type EnvVars = Vec<(String, String)>;
 
 /// A command.
-#[derive(Debug)]
 pub struct Command {
     /// The command to execute.
     pub command: String,

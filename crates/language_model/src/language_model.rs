@@ -1,19 +1,23 @@
+pub mod logging;
 mod model;
+pub mod provider;
 mod rate_limiter;
 mod registry;
 mod request;
 mod role;
-
-#[cfg(any(test, feature = "test-support"))]
-pub mod fake_provider;
+pub mod settings;
 
 use anyhow::Result;
+use client::{Client, UserStore};
 use futures::FutureExt;
 use futures::{future::BoxFuture, stream::BoxStream, StreamExt, TryStreamExt as _};
-use gpui::{AnyElement, AnyView, AppContext, AsyncAppContext, SharedString, Task, WindowContext};
+use gpui::{
+    AnyElement, AnyView, AppContext, AsyncAppContext, Model, SharedString, Task, WindowContext,
+};
 pub use model::*;
+use project::Fs;
 use proto::Plan;
-pub use rate_limiter::*;
+pub(crate) use rate_limiter::*;
 pub use registry::*;
 pub use request::*;
 pub use role::*;
@@ -23,10 +27,14 @@ use std::fmt;
 use std::{future::Future, sync::Arc};
 use ui::IconName;
 
-pub const ZED_CLOUD_PROVIDER_ID: &str = "zed.dev";
-
-pub fn init(cx: &mut AppContext) {
-    registry::init(cx);
+pub fn init(
+    user_store: Model<UserStore>,
+    client: Arc<Client>,
+    fs: Arc<dyn Fs>,
+    cx: &mut AppContext,
+) {
+    settings::init(fs, cx);
+    registry::init(user_store, client, cx);
 }
 
 /// The availability of a [`LanguageModel`].
@@ -176,7 +184,7 @@ pub trait LanguageModel: Send + Sync {
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    fn as_fake(&self) -> &fake_provider::FakeLanguageModel {
+    fn as_fake(&self) -> &provider::fake::FakeLanguageModel {
         unimplemented!()
     }
 }

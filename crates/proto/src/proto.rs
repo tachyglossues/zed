@@ -368,9 +368,6 @@ messages!(
     (GetPanicFiles, Background),
     (GetPanicFilesResponse, Background),
     (CancelLanguageServerWork, Foreground),
-    (SyncExtensions, Background),
-    (SyncExtensionsResponse, Background),
-    (InstallExtension, Background),
 );
 
 request_messages!(
@@ -494,8 +491,6 @@ request_messages!(
     (GetPathMetadata, GetPathMetadataResponse),
     (GetPanicFiles, GetPanicFilesResponse),
     (CancelLanguageServerWork, Ack),
-    (SyncExtensions, SyncExtensionsResponse),
-    (InstallExtension, Ack),
 );
 
 entity_messages!(

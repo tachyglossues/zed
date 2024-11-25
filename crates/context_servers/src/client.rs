@@ -9,7 +9,7 @@ use serde_json::{value::RawValue, Value};
 use smol::{
     channel,
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
-    process::Child,
+    process::{self, Child},
 };
 use std::{
     fmt,
@@ -152,7 +152,7 @@ impl Client {
             &binary.args
         );
 
-        let mut command = util::command::new_smol_command(&binary.executable);
+        let mut command = process::Command::new(&binary.executable);
         command
             .args(&binary.args)
             .envs(binary.env.unwrap_or_default())

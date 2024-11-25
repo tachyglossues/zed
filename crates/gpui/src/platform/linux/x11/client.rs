@@ -776,11 +776,11 @@ impl X11Client {
                     },
                 };
                 let window = self.get_window(event.window)?;
-                window.configure(bounds).unwrap();
+                window.configure(bounds);
             }
             Event::PropertyNotify(event) => {
                 let window = self.get_window(event.window)?;
-                window.property_notify(event).unwrap();
+                window.property_notify(event);
             }
             Event::FocusIn(event) => {
                 let window = self.get_window(event.event)?;
@@ -1258,9 +1258,11 @@ impl LinuxClient for X11Client {
             .iter()
             .enumerate()
             .filter_map(|(root_id, _)| {
-                Some(Rc::new(
-                    X11Display::new(&state.xcb_connection, state.scale_factor, root_id).ok()?,
-                ) as Rc<dyn PlatformDisplay>)
+                Some(Rc::new(X11Display::new(
+                    &state.xcb_connection,
+                    state.scale_factor,
+                    root_id,
+                )?) as Rc<dyn PlatformDisplay>)
             })
             .collect()
     }
@@ -1281,9 +1283,11 @@ impl LinuxClient for X11Client {
     fn display(&self, id: DisplayId) -> Option<Rc<dyn PlatformDisplay>> {
         let state = self.0.borrow();
 
-        Some(Rc::new(
-            X11Display::new(&state.xcb_connection, state.scale_factor, id.0 as usize).ok()?,
-        ))
+        Some(Rc::new(X11Display::new(
+            &state.xcb_connection,
+            state.scale_factor,
+            id.0 as usize,
+        )?))
     }
 
     fn open_window(

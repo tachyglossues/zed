@@ -381,7 +381,8 @@
       "shift-b": "vim::CurlyBrackets",
       "<": "vim::AngleBrackets",
       ">": "vim::AngleBrackets",
-      "a": "vim::Argument"
+      "a": "vim::AngleBrackets",
+      "g": "vim::Argument"
     }
   },
   {
@@ -577,7 +578,7 @@
     }
   },
   {
-    "context": "EmptyPane || SharedScreen || MarkdownPreview || KeyContextView || Welcome",
+    "context": "EmptyPane || SharedScreen || MarkdownPreview || KeyContextView",
     "use_layout_keys": true,
     "bindings": {
       ":": "command_palette::Toggle",

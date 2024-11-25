@@ -7,14 +7,11 @@ use command_palette_hooks::CommandPaletteFilter;
 use gpui::{
     prelude::*, AppContext, EntityId, Global, Model, ModelContext, Subscription, Task, View,
 };
-use jupyter_websocket_client::RemoteServer;
 use language::Language;
 use project::{Fs, Project, WorktreeId};
 use settings::{Settings, SettingsStore};
 
-use crate::kernels::{
-    list_remote_kernelspecs, local_kernel_specifications, python_env_kernel_specifications,
-};
+use crate::kernels::{local_kernel_specifications, python_env_kernel_specifications};
 use crate::{JupyterSettings, KernelSpecification, Session};
 
 struct GlobalReplStore(Model<ReplStore>);
@@ -144,50 +141,19 @@ impl ReplStore {
         })
     }
 
-    fn get_remote_kernel_specifications(
-        &self,
-        cx: &mut ModelContext<Self>,
-    ) -> Option<Task<Result<Vec<KernelSpecification>>>> {
-        match (
-            std::env::var("JUPYTER_SERVER"),
-            std::env::var("JUPYTER_TOKEN"),
-        ) {
-            (Ok(server), Ok(token)) => {
-                let remote_server = RemoteServer {
-                    base_url: server,
-                    token,
-                };
-                let http_client = cx.http_client();
-                Some(cx.spawn(|_, _| async move {
-                    list_remote_kernelspecs(remote_server, http_client)
-                        .await
-                        .map(|specs| specs.into_iter().map(KernelSpecification::Remote).collect())
-                }))
-            }
-            _ => None,
-        }
-    }
-
     pub fn refresh_kernelspecs(&mut self, cx: &mut ModelContext<Self>) -> Task<Result<()>> {
         let local_kernel_specifications = local_kernel_specifications(self.fs.clone());
 
-        let remote_kernel_specifications = self.get_remote_kernel_specifications(cx);
-
         cx.spawn(|this, mut cx| async move {
-            let mut all_specs = local_kernel_specifications
-                .await?
-                .into_iter()
-                .map(KernelSpecification::Jupyter)
-                .collect::<Vec<_>>();
+            let local_kernel_specifications = local_kernel_specifications.await?;
 
-            if let Some(remote_task) = remote_kernel_specifications {
-                if let Ok(remote_specs) = remote_task.await {
-                    all_specs.extend(remote_specs);
-                }
+            let mut kernel_options = Vec::new();
+            for kernel_specification in local_kernel_specifications {
+                kernel_options.push(KernelSpecification::Jupyter(kernel_specification));
             }
 
             this.update(&mut cx, |this, cx| {
-                this.kernel_specifications = all_specs;
+                this.kernel_specifications = kernel_options;
                 cx.notify();
             })
         })
@@ -258,9 +224,8 @@ impl ReplStore {
                     runtime_specification.kernelspec.language.to_lowercase()
                         == language_at_cursor.code_fence_block_name().to_lowercase()
                 }
-                KernelSpecification::Remote(remote_spec) => {
-                    remote_spec.kernelspec.language.to_lowercase()
-                        == language_at_cursor.code_fence_block_name().to_lowercase()
+                KernelSpecification::Remote(_) => {
+                    unimplemented!()
                 }
             })
             .cloned()

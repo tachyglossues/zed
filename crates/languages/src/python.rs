@@ -2,8 +2,8 @@ use anyhow::ensure;
 use anyhow::{anyhow, Result};
 use async_trait::async_trait;
 use collections::HashMap;
+use gpui::AsyncAppContext;
 use gpui::{AppContext, Task};
-use gpui::{AsyncAppContext, SharedString};
 use language::language_settings::language_settings;
 use language::LanguageName;
 use language::LanguageToolchainStore;
@@ -19,7 +19,7 @@ use pet_core::python_environment::PythonEnvironmentKind;
 use pet_core::Configuration;
 use project::lsp_store::language_server_settings;
 use serde_json::{json, Value};
-use smol::lock::OnceCell;
+use smol::{lock::OnceCell, process::Command};
 use std::cmp::Ordering;
 
 use std::str::FromStr;
@@ -79,7 +79,6 @@ impl LspAdapter for PythonLspAdapter {
     async fn check_if_user_installed(
         &self,
         delegate: &dyn LspAdapterDelegate,
-        _: Arc<dyn LanguageToolchainStore>,
         _: &AsyncAppContext,
     ) -> Option<LanguageServerBinary> {
         let node = delegate.which("node".as_ref()).await?;
@@ -499,17 +498,8 @@ fn python_module_name_from_relative_path(relative_path: &str) -> String {
         .to_string()
 }
 
-pub(crate) struct PythonToolchainProvider {
-    term: SharedString,
-}
-
-impl Default for PythonToolchainProvider {
-    fn default() -> Self {
-        Self {
-            term: SharedString::new_static("Virtual Environment"),
-        }
-    }
-}
+#[derive(Default)]
+pub(crate) struct PythonToolchainProvider {}
 
 static ENV_PRIORITY_LIST: &'static [PythonEnvironmentKind] = &[
     // Prioritize non-Conda environments.
@@ -601,9 +591,8 @@ impl ToolchainLister for PythonToolchainProvider {
                 .into();
                 Some(Toolchain {
                     name,
-                    path: toolchain.executable.as_ref()?.to_str()?.to_owned().into(),
+                    path: toolchain.executable?.to_str()?.to_owned().into(),
                     language_name: LanguageName::new("Python"),
-                    as_json: serde_json::to_value(toolchain).ok()?,
                 })
             })
             .collect();
@@ -613,9 +602,6 @@ impl ToolchainLister for PythonToolchainProvider {
             default: None,
             groups: Default::default(),
         }
-    }
-    fn term(&self) -> SharedString {
-        self.term.clone()
     }
 }
 
@@ -712,7 +698,7 @@ impl PyLspAdapter {
         let mut path = PathBuf::from(work_dir.as_ref());
         path.push("pylsp-venv");
         if !path.exists() {
-            util::command::new_smol_command(python_path)
+            Command::new(python_path)
                 .arg("-m")
                 .arg("venv")
                 .arg("pylsp-venv")
@@ -754,29 +740,33 @@ impl LspAdapter for PyLspAdapter {
 
     async fn check_if_user_installed(
         &self,
-        delegate: &dyn LspAdapterDelegate,
-        toolchains: Arc<dyn LanguageToolchainStore>,
-        cx: &AsyncAppContext,
+        _: &dyn LspAdapterDelegate,
+        _: &AsyncAppContext,
     ) -> Option<LanguageServerBinary> {
-        let venv = toolchains
-            .active_toolchain(
-                delegate.worktree_id(),
-                LanguageName::new("Python"),
-                &mut cx.clone(),
-            )
-            .await?;
-        let pylsp_path = Path::new(venv.path.as_ref()).parent()?.join("pylsp");
-        pylsp_path.exists().then(|| LanguageServerBinary {
-            path: venv.path.to_string().into(),
-            arguments: vec![pylsp_path.into()],
-            env: None,
-        })
+        // We don't support user-provided pylsp, as global packages are discouraged in Python ecosystem.
+        None
     }
 
     async fn fetch_latest_server_version(
         &self,
         _: &dyn LspAdapterDelegate,
     ) -> Result<Box<dyn 'static + Any + Send>> {
+        // let uri = "https://pypi.org/pypi/python-lsp-server/json";
+        // let mut root_manifest = delegate
+        //     .http_client()
+        //     .get(&uri, Default::default(), true)
+        //     .await?;
+        // let mut body = Vec::new();
+        // root_manifest.body_mut().read_to_end(&mut body).await?;
+        // let as_str = String::from_utf8(body)?;
+        // let json = serde_json::Value::from_str(&as_str)?;
+        // let latest_version = json
+        //     .get("info")
+        //     .and_then(|info| info.get("version"))
+        //     .and_then(|version| version.as_str().map(ToOwned::to_owned))
+        //     .ok_or_else(|| {
+        //         anyhow!("PyPI response did not contain version info for python-language-server")
+        //     })?;
         Ok(Box::new(()) as Box<_>)
     }
 
@@ -789,7 +779,7 @@ impl LspAdapter for PyLspAdapter {
         let venv = self.base_venv(delegate).await.map_err(|e| anyhow!(e))?;
         let pip_path = venv.join("bin").join("pip3");
         ensure!(
-            util::command::new_smol_command(pip_path.as_path())
+            Command::new(pip_path.as_path())
                 .arg("install")
                 .arg("python-lsp-server")
                 .output()
@@ -799,7 +789,7 @@ impl LspAdapter for PyLspAdapter {
             "python-lsp-server installation failed"
         );
         ensure!(
-            util::command::new_smol_command(pip_path.as_path())
+            Command::new(pip_path.as_path())
                 .arg("install")
                 .arg("python-lsp-server[all]")
                 .output()
@@ -809,7 +799,7 @@ impl LspAdapter for PyLspAdapter {
             "python-lsp-server[all] installation failed"
         );
         ensure!(
-            util::command::new_smol_command(pip_path)
+            Command::new(pip_path)
                 .arg("install")
                 .arg("pylsp-mypy")
                 .output()

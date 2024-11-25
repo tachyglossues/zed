@@ -109,7 +109,7 @@ pub struct TerminalView {
     blink_epoch: usize,
     can_navigate_to_selected_word: bool,
     workspace_id: Option<WorkspaceId>,
-    show_breadcrumbs: bool,
+    show_title: bool,
     block_below_cursor: Option<Rc<BlockProperties>>,
     scroll_top: Pixels,
     _subscriptions: Vec<Subscription>,
@@ -189,7 +189,7 @@ impl TerminalView {
             blink_epoch: 0,
             can_navigate_to_selected_word: false,
             workspace_id,
-            show_breadcrumbs: TerminalSettings::get_global(cx).toolbar.breadcrumbs,
+            show_title: TerminalSettings::get_global(cx).toolbar.title,
             block_below_cursor: None,
             scroll_top: Pixels::ZERO,
             _subscriptions: vec![
@@ -259,7 +259,7 @@ impl TerminalView {
 
     fn settings_changed(&mut self, cx: &mut ViewContext<Self>) {
         let settings = TerminalSettings::get_global(cx);
-        self.show_breadcrumbs = settings.toolbar.breadcrumbs;
+        self.show_title = settings.toolbar.title;
 
         let new_cursor_shape = settings.cursor_shape.unwrap_or_default();
         let old_cursor_shape = self.cursor_shape;
@@ -1044,8 +1044,8 @@ impl Item for TerminalView {
                 .shape(ui::IconButtonShape::Square)
                 .tooltip(|cx| Tooltip::text("Rerun task", cx))
                 .on_click(move |_, cx| {
-                    cx.dispatch_action(Box::new(zed_actions::Rerun {
-                        task_id: Some(task_id.0.clone()),
+                    cx.dispatch_action(Box::new(tasks_ui::Rerun {
+                        task_id: Some(task_id.clone()),
                         allow_concurrent_runs: Some(true),
                         use_new_terminal: Some(false),
                         reevaluate_context: false,
@@ -1145,8 +1145,8 @@ impl Item for TerminalView {
         Some(Box::new(handle.clone()))
     }
 
-    fn breadcrumb_location(&self, cx: &AppContext) -> ToolbarItemLocation {
-        if self.show_breadcrumbs && !self.terminal().read(cx).breadcrumb_text.trim().is_empty() {
+    fn breadcrumb_location(&self) -> ToolbarItemLocation {
+        if self.show_title {
             ToolbarItemLocation::PrimaryLeft
         } else {
             ToolbarItemLocation::Hidden

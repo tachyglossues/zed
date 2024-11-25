@@ -1,7 +1,7 @@
 use crate::{
     assistant_settings::AssistantSettings, humanize_token_count, prompts::PromptBuilder,
     AssistantPanel, AssistantPanelEvent, CharOperation, CycleNextInlineAssist,
-    CyclePreviousInlineAssist, LineDiff, LineOperation, RequestType, StreamingDiff,
+    CyclePreviousInlineAssist, LineDiff, LineOperation, ModelSelector, RequestType, StreamingDiff,
 };
 use anyhow::{anyhow, Context as _, Result};
 use client::{telemetry::Telemetry, ErrorExt};
@@ -30,16 +30,14 @@ use gpui::{
 };
 use language::{Buffer, IndentKind, Point, Selection, TransactionId};
 use language_model::{
-    LanguageModel, LanguageModelRegistry, LanguageModelRequest, LanguageModelRequestMessage,
-    LanguageModelTextStream, Role,
+    logging::report_assistant_event, LanguageModel, LanguageModelRegistry, LanguageModelRequest,
+    LanguageModelRequestMessage, LanguageModelTextStream, Role,
 };
-use language_model_selector::LanguageModelSelector;
-use language_models::report_assistant_event;
 use multi_buffer::MultiBufferRow;
 use parking_lot::Mutex;
 use project::{CodeAction, ProjectTransaction};
 use rope::Rope;
-use settings::{update_settings_file, Settings, SettingsStore};
+use settings::{Settings, SettingsStore};
 use smol::future::FutureExt;
 use std::{
     cmp,
@@ -1501,17 +1499,8 @@ impl Render for PromptEditor {
                     .justify_center()
                     .gap_2()
                     .child(
-                        LanguageModelSelector::new(
-                            {
-                                let fs = self.fs.clone();
-                                move |model, cx| {
-                                    update_settings_file::<AssistantSettings>(
-                                        fs.clone(),
-                                        cx,
-                                        move |settings, _| settings.set_model(model.clone()),
-                                    );
-                                }
-                            },
+                        ModelSelector::new(
+                            self.fs.clone(),
                             IconButton::new("context", IconName::SettingsAlt)
                                 .shape(IconButtonShape::Square)
                                 .icon_size(IconSize::Small)
@@ -1531,7 +1520,7 @@ impl Render for PromptEditor {
                                     )
                                 }),
                         )
-                        .info_text(
+                        .with_info_text(
                             "Inline edits use context\n\
                             from the currently selected\n\
                             assistant panel tab.",

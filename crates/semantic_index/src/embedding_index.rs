@@ -7,7 +7,6 @@ use anyhow::{anyhow, Context as _, Result};
 use collections::Bound;
 use feature_flags::FeatureFlagAppExt;
 use fs::Fs;
-use fs::MTime;
 use futures::stream::StreamExt;
 use futures_batch::ChunksTimeoutStreamExt;
 use gpui::{AppContext, Model, Task};
@@ -18,7 +17,14 @@ use project::{Entry, UpdatedEntriesSet, Worktree};
 use serde::{Deserialize, Serialize};
 use smol::channel;
 use smol::future::FutureExt;
-use std::{cmp::Ordering, future::Future, iter, path::Path, sync::Arc, time::Duration};
+use std::{
+    cmp::Ordering,
+    future::Future,
+    iter,
+    path::Path,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 use util::ResultExt;
 use worktree::Snapshot;
 
@@ -445,7 +451,7 @@ struct ChunkFiles {
 
 pub struct ChunkedFile {
     pub path: Arc<Path>,
-    pub mtime: Option<MTime>,
+    pub mtime: Option<SystemTime>,
     pub handle: IndexingEntryHandle,
     pub text: String,
     pub chunks: Vec<Chunk>,
@@ -459,7 +465,7 @@ pub struct EmbedFiles {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EmbeddedFile {
     pub path: Arc<Path>,
-    pub mtime: Option<MTime>,
+    pub mtime: Option<SystemTime>,
     pub chunks: Vec<EmbeddedChunk>,
 }
 

@@ -1,7 +1,6 @@
 use crate::headless_project::HeadlessProject;
 use client::{Client, UserStore};
 use clock::FakeSystemClock;
-use extension::ExtensionHostProxy;
 use fs::{FakeFs, Fs};
 use gpui::{Context, Model, SemanticVersion, TestAppContext};
 use http_client::{BlockedHttpClient, FakeHttpClient};
@@ -1235,7 +1234,6 @@ pub async fn init_test(
     let http_client = Arc::new(BlockedHttpClient);
     let node_runtime = NodeRuntime::unavailable();
     let languages = Arc::new(LanguageRegistry::new(cx.executor()));
-    let proxy = Arc::new(ExtensionHostProxy::new());
     server_cx.update(HeadlessProject::init);
     let headless = server_cx.new_model(|cx| {
         client::init_settings(cx);
@@ -1247,7 +1245,6 @@ pub async fn init_test(
                 http_client,
                 node_runtime,
                 languages,
-                extension_host_proxy: proxy,
             },
             cx,
         )

@@ -4,15 +4,14 @@ use gpui::{
     ViewContext, WeakModel, WeakView,
 };
 use language::{Buffer, BufferEvent, LanguageName, Toolchain};
-use project::{Project, WorktreeId};
-use ui::{Button, ButtonCommon, Clickable, FluentBuilder, LabelSize, SharedString, Tooltip};
+use project::WorktreeId;
+use ui::{Button, ButtonCommon, Clickable, FluentBuilder, LabelSize, Tooltip};
 use workspace::{item::ItemHandle, StatusItemView, Workspace};
 
 use crate::ToolchainSelector;
 
 pub struct ActiveToolchain {
     active_toolchain: Option<Toolchain>,
-    term: SharedString,
     workspace: WeakView<Workspace>,
     active_buffer: Option<(WorktreeId, WeakModel<Buffer>, Subscription)>,
     _update_toolchain_task: Task<Option<()>>,
@@ -23,7 +22,6 @@ impl ActiveToolchain {
         Self {
             active_toolchain: None,
             active_buffer: None,
-            term: SharedString::new_static("Toolchain"),
             workspace: workspace.weak_handle(),
 
             _update_toolchain_task: Self::spawn_tracker_task(cx),
@@ -46,17 +44,7 @@ impl ActiveToolchain {
                 .update(&mut cx, |this, _| Some(this.language()?.name()))
                 .ok()
                 .flatten()?;
-            let term = workspace
-                .update(&mut cx, |workspace, cx| {
-                    let languages = workspace.project().read(cx).languages();
-                    Project::toolchain_term(languages.clone(), language_name.clone())
-                })
-                .ok()?
-                .await?;
-            let _ = this.update(&mut cx, |this, cx| {
-                this.term = term;
-                cx.notify();
-            });
+
             let worktree_id = active_file
                 .update(&mut cx, |this, cx| Some(this.file()?.worktree_id(cx)))
                 .ok()
@@ -145,7 +133,6 @@ impl ActiveToolchain {
 impl Render for ActiveToolchain {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div().when_some(self.active_toolchain.as_ref(), |el, active_toolchain| {
-            let term = self.term.clone();
             el.child(
                 Button::new("change-toolchain", active_toolchain.name.clone())
                     .label_size(LabelSize::Small)
@@ -156,7 +143,7 @@ impl Render for ActiveToolchain {
                             });
                         }
                     }))
-                    .tooltip(move |cx| Tooltip::text(format!("Select {}", &term), cx)),
+                    .tooltip(|cx| Tooltip::text("Select Toolchain", cx)),
             )
         })
     }
