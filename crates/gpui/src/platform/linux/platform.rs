@@ -18,7 +18,7 @@ use std::{
     time::Duration,
 };
 
-use anyhow::{anyhow, Context as _};
+use anyhow::anyhow;
 use async_task::Runnable;
 use calloop::channel::Channel;
 use calloop::{EventLoop, LoopHandle, LoopSignal};
@@ -35,8 +35,8 @@ use crate::{
     px, Action, AnyWindowHandle, BackgroundExecutor, ClipboardItem, CursorStyle, DisplayId,
     ForegroundExecutor, Keymap, Keystroke, LinuxDispatcher, Menu, MenuItem, Modifiers, OwnedMenu,
     PathPromptOptions, Pixels, Platform, PlatformDisplay, PlatformInputHandler, PlatformTextSystem,
-    PlatformWindow, Point, PromptLevel, Result, ScreenCaptureSource, SemanticVersion, SharedString,
-    Size, Task, WindowAppearance, WindowOptions, WindowParams,
+    PlatformWindow, Point, PromptLevel, Result, SemanticVersion, SharedString, Size, Task,
+    WindowAppearance, WindowOptions, WindowParams,
 };
 
 pub(crate) const SCROLL_LINES: f32 = 3.0;
@@ -242,14 +242,6 @@ impl<P: LinuxClient + 'static> Platform for P {
         self.displays()
     }
 
-    fn screen_capture_sources(
-        &self,
-    ) -> oneshot::Receiver<Result<Vec<Box<dyn ScreenCaptureSource>>>> {
-        let (mut tx, rx) = oneshot::channel();
-        tx.send(Err(anyhow!("screen capture not implemented"))).ok();
-        rx
-    }
-
     fn active_window(&self) -> Option<AnyWindowHandle> {
         self.active_window()
     }
@@ -382,14 +374,14 @@ impl<P: LinuxClient + 'static> Platform for P {
     }
 
     fn open_with_system(&self, path: &Path) {
+        let executor = self.background_executor().clone();
         let path = path.to_owned();
-        self.background_executor()
+        executor
             .spawn(async move {
                 let _ = std::process::Command::new("xdg-open")
                     .arg(path)
                     .spawn()
-                    .context("invoking xdg-open")
-                    .log_err();
+                    .expect("Failed to open file with xdg-open");
             })
             .detach();
     }

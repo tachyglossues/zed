@@ -20,7 +20,7 @@ pub struct KeymapBlock {
     #[serde(default)]
     context: Option<String>,
     #[serde(default)]
-    use_key_equivalents: Option<bool>,
+    use_layout_keys: Option<bool>,
     bindings: BTreeMap<String, KeymapAction>,
 }
 
@@ -80,7 +80,7 @@ impl KeymapFile {
 
         for KeymapBlock {
             context,
-            use_key_equivalents,
+            use_layout_keys,
             bindings,
         } in self.0
         {
@@ -124,10 +124,10 @@ impl KeymapFile {
                             &keystroke,
                             action,
                             context.as_deref(),
-                            if use_key_equivalents.unwrap_or_default() {
-                                key_equivalents.as_ref()
-                            } else {
+                            if use_layout_keys.unwrap_or_default() {
                                 None
+                            } else {
+                                key_equivalents.as_ref()
                             },
                         )
                     })

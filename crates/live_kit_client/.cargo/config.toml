@@ -1,2 +1,2 @@
-[livekit_client_test]
+[live_kit_client_test]
 rustflags = ["-C", "link-args=-ObjC"]

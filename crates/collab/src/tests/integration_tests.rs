@@ -25,6 +25,7 @@ use language::{
     tree_sitter_rust, tree_sitter_typescript, Diagnostic, DiagnosticEntry, FakeLspAdapter,
     Language, LanguageConfig, LanguageMatcher, LineEnding, OffsetRangeExt, Point, Rope,
 };
+use live_kit_client::MacOSDisplay;
 use lsp::LanguageServerId;
 use parking_lot::Mutex;
 use project::lsp_store::FormatTarget;
@@ -240,60 +241,56 @@ async fn test_basic_calls(
         }
     );
 
-    // TODO: Re-enable this test once we can replace our swift Livekit SDK with the rust SDK
-    #[cfg(not(target_os = "macos"))]
-    {
-        // User A shares their screen
-        let display = gpui::TestScreenCaptureSource::new();
-        let events_b = active_call_events(cx_b);
-        let events_c = active_call_events(cx_c);
-        cx_a.set_screen_capture_sources(vec![display]);
-        active_call_a
-            .update(cx_a, |call, cx| {
-                call.room()
-                    .unwrap()
-                    .update(cx, |room, cx| room.share_screen(cx))
+    // User A shares their screen
+    let display = MacOSDisplay::new();
+    let events_b = active_call_events(cx_b);
+    let events_c = active_call_events(cx_c);
+    active_call_a
+        .update(cx_a, |call, cx| {
+            call.room().unwrap().update(cx, |room, cx| {
+                room.set_display_sources(vec![display.clone()]);
+                room.share_screen(cx)
             })
-            .await
-            .unwrap();
+        })
+        .await
+        .unwrap();
 
-        executor.run_until_parked();
+    executor.run_until_parked();
 
-        // User B observes the remote screen sharing track.
-        assert_eq!(events_b.borrow().len(), 1);
-        let event_b = events_b.borrow().first().unwrap().clone();
-        if let call::room::Event::RemoteVideoTracksChanged { participant_id } = event_b {
-            assert_eq!(participant_id, client_a.peer_id().unwrap());
+    // User B observes the remote screen sharing track.
+    assert_eq!(events_b.borrow().len(), 1);
+    let event_b = events_b.borrow().first().unwrap().clone();
+    if let call::room::Event::RemoteVideoTracksChanged { participant_id } = event_b {
+        assert_eq!(participant_id, client_a.peer_id().unwrap());
 
-            room_b.read_with(cx_b, |room, _| {
-                assert_eq!(
-                    room.remote_participants()[&client_a.user_id().unwrap()]
-                        .video_tracks
-                        .len(),
-                    1
-                );
-            });
-        } else {
-            panic!("unexpected event")
-        }
+        room_b.read_with(cx_b, |room, _| {
+            assert_eq!(
+                room.remote_participants()[&client_a.user_id().unwrap()]
+                    .video_tracks
+                    .len(),
+                1
+            );
+        });
+    } else {
+        panic!("unexpected event")
+    }
 
-        // User C observes the remote screen sharing track.
-        assert_eq!(events_c.borrow().len(), 1);
-        let event_c = events_c.borrow().first().unwrap().clone();
-        if let call::room::Event::RemoteVideoTracksChanged { participant_id } = event_c {
-            assert_eq!(participant_id, client_a.peer_id().unwrap());
+    // User C observes the remote screen sharing track.
+    assert_eq!(events_c.borrow().len(), 1);
+    let event_c = events_c.borrow().first().unwrap().clone();
+    if let call::room::Event::RemoteVideoTracksChanged { participant_id } = event_c {
+        assert_eq!(participant_id, client_a.peer_id().unwrap());
 
-            room_c.read_with(cx_c, |room, _| {
-                assert_eq!(
-                    room.remote_participants()[&client_a.user_id().unwrap()]
-                        .video_tracks
-                        .len(),
-                    1
-                );
-            });
-        } else {
-            panic!("unexpected event")
-        }
+        room_c.read_with(cx_c, |room, _| {
+            assert_eq!(
+                room.remote_participants()[&client_a.user_id().unwrap()]
+                    .video_tracks
+                    .len(),
+                1
+            );
+        });
+    } else {
+        panic!("unexpected event")
     }
 
     // User A leaves the room.
@@ -332,7 +329,7 @@ async fn test_basic_calls(
     // to automatically leave the room. User C leaves the room as well because
     // nobody else is in there.
     server
-        .test_livekit_server
+        .test_live_kit_server
         .disconnect_client(client_b.user_id().unwrap().to_string())
         .await;
     executor.run_until_parked();
@@ -847,7 +844,7 @@ async fn test_client_disconnecting_from_room(
     // User B gets disconnected from the LiveKit server, which causes it
     // to automatically leave the room.
     server
-        .test_livekit_server
+        .test_live_kit_server
         .disconnect_client(client_b.user_id().unwrap().to_string())
         .await;
     executor.run_until_parked();
@@ -1946,7 +1943,7 @@ async fn test_mute_deafen(
     room_a.read_with(cx_a, |room, _| assert!(!room.is_muted()));
     room_b.read_with(cx_b, |room, _| assert!(!room.is_muted()));
 
-    // Users A and B are both unmuted.
+    // Users A and B are both muted.
     assert_eq!(
         participant_audio_state(&room_a, cx_a),
         &[ParticipantAudioState {
@@ -2078,17 +2075,7 @@ async fn test_mute_deafen(
                     audio_tracks_playing: participant
                         .audio_tracks
                         .values()
-                        .map({
-                            #[cfg(target_os = "macos")]
-                            {
-                                |track| track.is_playing()
-                            }
-
-                            #[cfg(not(target_os = "macos"))]
-                            {
-                                |(track, _)| track.rtc_track().enabled()
-                            }
-                        })
+                        .map(|track| track.is_playing())
                         .collect(),
                 })
                 .collect::<Vec<_>>()
@@ -2574,23 +2561,19 @@ async fn test_git_diff_base_change(
         .update(cx_a, |p, cx| p.open_buffer((worktree_id, "a.txt"), cx))
         .await
         .unwrap();
-    let change_set_local_a = project_local
-        .update(cx_a, |p, cx| {
-            p.open_unstaged_changes(buffer_local_a.clone(), cx)
-        })
-        .await
-        .unwrap();
 
     // Wait for it to catch up to the new diff
     executor.run_until_parked();
-    change_set_local_a.read_with(cx_a, |change_set, cx| {
-        let buffer = buffer_local_a.read(cx);
+
+    // Smoke test diffing
+
+    buffer_local_a.read_with(cx_a, |buffer, _| {
         assert_eq!(
-            change_set.base_text_string(cx).as_deref(),
+            buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(diff_base.as_str())
         );
         git::diff::assert_hunks(
-            change_set.diff_to_buffer.hunks_in_row_range(0..4, buffer),
+            buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             buffer,
             &diff_base,
             &[(1..2, "", "two\n")],
@@ -2602,30 +2585,25 @@ async fn test_git_diff_base_change(
         .update(cx_b, |p, cx| p.open_buffer((worktree_id, "a.txt"), cx))
         .await
         .unwrap();
-    let change_set_remote_a = project_remote
-        .update(cx_b, |p, cx| {
-            p.open_unstaged_changes(buffer_remote_a.clone(), cx)
-        })
-        .await
-        .unwrap();
 
     // Wait remote buffer to catch up to the new diff
     executor.run_until_parked();
-    change_set_remote_a.read_with(cx_b, |change_set, cx| {
-        let buffer = buffer_remote_a.read(cx);
+
+    // Smoke test diffing
+
+    buffer_remote_a.read_with(cx_b, |buffer, _| {
         assert_eq!(
-            change_set.base_text_string(cx).as_deref(),
+            buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(diff_base.as_str())
         );
         git::diff::assert_hunks(
-            change_set.diff_to_buffer.hunks_in_row_range(0..4, buffer),
+            buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             buffer,
             &diff_base,
             &[(1..2, "", "two\n")],
         );
     });
 
-    // Update the staged text of the open buffer
     client_a.fs().set_index_for_repo(
         Path::new("/dir/.git"),
         &[(Path::new("a.txt"), new_diff_base.clone())],
@@ -2633,35 +2611,40 @@ async fn test_git_diff_base_change(
 
     // Wait for buffer_local_a to receive it
     executor.run_until_parked();
-    change_set_local_a.read_with(cx_a, |change_set, cx| {
-        let buffer = buffer_local_a.read(cx);
+
+    // Smoke test new diffing
+
+    buffer_local_a.read_with(cx_a, |buffer, _| {
         assert_eq!(
-            change_set.base_text_string(cx).as_deref(),
+            buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(new_diff_base.as_str())
         );
+
         git::diff::assert_hunks(
-            change_set.diff_to_buffer.hunks_in_row_range(0..4, buffer),
+            buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             buffer,
-            &new_diff_base,
+            &diff_base,
             &[(2..3, "", "three\n")],
         );
     });
 
-    change_set_remote_a.read_with(cx_b, |change_set, cx| {
-        let buffer = buffer_remote_a.read(cx);
+    // Smoke test B
+
+    buffer_remote_a.read_with(cx_b, |buffer, _| {
         assert_eq!(
-            change_set.base_text_string(cx).as_deref(),
+            buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(new_diff_base.as_str())
         );
         git::diff::assert_hunks(
-            change_set.diff_to_buffer.hunks_in_row_range(0..4, buffer),
+            buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             buffer,
-            &new_diff_base,
+            &diff_base,
             &[(2..3, "", "three\n")],
         );
     });
 
-    // Nested git dir
+    //Nested git dir
+
     let diff_base = "
         one
         three
@@ -2684,23 +2667,19 @@ async fn test_git_diff_base_change(
         .update(cx_a, |p, cx| p.open_buffer((worktree_id, "sub/b.txt"), cx))
         .await
         .unwrap();
-    let change_set_local_b = project_local
-        .update(cx_a, |p, cx| {
-            p.open_unstaged_changes(buffer_local_b.clone(), cx)
-        })
-        .await
-        .unwrap();
 
     // Wait for it to catch up to the new diff
     executor.run_until_parked();
-    change_set_local_b.read_with(cx_a, |change_set, cx| {
-        let buffer = buffer_local_b.read(cx);
+
+    // Smoke test diffing
+
+    buffer_local_b.read_with(cx_a, |buffer, _| {
         assert_eq!(
-            change_set.base_text_string(cx).as_deref(),
+            buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(diff_base.as_str())
         );
         git::diff::assert_hunks(
-            change_set.diff_to_buffer.hunks_in_row_range(0..4, buffer),
+            buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             buffer,
             &diff_base,
             &[(1..2, "", "two\n")],
@@ -2712,29 +2691,25 @@ async fn test_git_diff_base_change(
         .update(cx_b, |p, cx| p.open_buffer((worktree_id, "sub/b.txt"), cx))
         .await
         .unwrap();
-    let change_set_remote_b = project_remote
-        .update(cx_b, |p, cx| {
-            p.open_unstaged_changes(buffer_remote_b.clone(), cx)
-        })
-        .await
-        .unwrap();
 
+    // Wait remote buffer to catch up to the new diff
     executor.run_until_parked();
-    change_set_remote_b.read_with(cx_b, |change_set, cx| {
-        let buffer = buffer_remote_b.read(cx);
+
+    // Smoke test diffing
+
+    buffer_remote_b.read_with(cx_b, |buffer, _| {
         assert_eq!(
-            change_set.base_text_string(cx).as_deref(),
+            buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(diff_base.as_str())
         );
         git::diff::assert_hunks(
-            change_set.diff_to_buffer.hunks_in_row_range(0..4, buffer),
+            buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             buffer,
             &diff_base,
             &[(1..2, "", "two\n")],
         );
     });
 
-    // Update the staged text
     client_a.fs().set_index_for_repo(
         Path::new("/dir/sub/.git"),
         &[(Path::new("b.txt"), new_diff_base.clone())],
@@ -2742,30 +2717,43 @@ async fn test_git_diff_base_change(
 
     // Wait for buffer_local_b to receive it
     executor.run_until_parked();
-    change_set_local_b.read_with(cx_a, |change_set, cx| {
-        let buffer = buffer_local_b.read(cx);
+
+    // Smoke test new diffing
+
+    buffer_local_b.read_with(cx_a, |buffer, _| {
         assert_eq!(
-            change_set.base_text_string(cx).as_deref(),
+            buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(new_diff_base.as_str())
         );
+        println!("{:?}", buffer.as_rope().to_string());
+        println!("{:?}", buffer.diff_base());
+        println!(
+            "{:?}",
+            buffer
+                .snapshot()
+                .git_diff_hunks_in_row_range(0..4)
+                .collect::<Vec<_>>()
+        );
+
         git::diff::assert_hunks(
-            change_set.diff_to_buffer.hunks_in_row_range(0..4, buffer),
+            buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             buffer,
-            &new_diff_base,
+            &diff_base,
             &[(2..3, "", "three\n")],
         );
     });
 
-    change_set_remote_b.read_with(cx_b, |change_set, cx| {
-        let buffer = buffer_remote_b.read(cx);
+    // Smoke test B
+
+    buffer_remote_b.read_with(cx_b, |buffer, _| {
         assert_eq!(
-            change_set.base_text_string(cx).as_deref(),
+            buffer.diff_base().map(|rope| rope.to_string()).as_deref(),
             Some(new_diff_base.as_str())
         );
         git::diff::assert_hunks(
-            change_set.diff_to_buffer.hunks_in_row_range(0..4, buffer),
+            buffer.snapshot().git_diff_hunks_in_row_range(0..4),
             buffer,
-            &new_diff_base,
+            &diff_base,
             &[(2..3, "", "three\n")],
         );
     });
@@ -6028,8 +6016,6 @@ async fn test_contact_requests(
     }
 }
 
-// TODO: Re-enable this test once we can replace our swift Livekit SDK with the rust SDK
-#[cfg(not(target_os = "macos"))]
 #[gpui::test(iterations = 10)]
 async fn test_join_call_after_screen_was_shared(
     executor: BackgroundExecutor,
@@ -6072,13 +6058,13 @@ async fn test_join_call_after_screen_was_shared(
     assert_eq!(call_b.calling_user.github_login, "user_a");
 
     // User A shares their screen
-    let display = gpui::TestScreenCaptureSource::new();
-    cx_a.set_screen_capture_sources(vec![display]);
+    let display = MacOSDisplay::new();
     active_call_a
         .update(cx_a, |call, cx| {
-            call.room()
-                .unwrap()
-                .update(cx, |room, cx| room.share_screen(cx))
+            call.room().unwrap().update(cx, |room, cx| {
+                room.set_display_sources(vec![display.clone()]);
+                room.share_screen(cx)
+            })
         })
         .await
         .unwrap();

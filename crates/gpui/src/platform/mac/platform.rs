@@ -1,16 +1,16 @@
 use super::{
     attributed_string::{NSAttributedString, NSMutableAttributedString},
     events::key_to_native,
-    renderer, screen_capture, BoolExt,
+    BoolExt,
 };
 use crate::{
     hash, Action, AnyWindowHandle, BackgroundExecutor, ClipboardEntry, ClipboardItem,
     ClipboardString, CursorStyle, ForegroundExecutor, Image, ImageFormat, Keymap, MacDispatcher,
     MacDisplay, MacWindow, Menu, MenuItem, PathPromptOptions, Platform, PlatformDisplay,
-    PlatformTextSystem, PlatformWindow, Result, ScreenCaptureSource, SemanticVersion, Task,
-    WindowAppearance, WindowParams,
+    PlatformTextSystem, PlatformWindow, Result, SemanticVersion, Task, WindowAppearance,
+    WindowParams,
 };
-use anyhow::{anyhow, Context as _};
+use anyhow::anyhow;
 use block::ConcreteBlock;
 use cocoa::{
     appkit::{
@@ -57,7 +57,8 @@ use std::{
     sync::Arc,
 };
 use strum::IntoEnumIterator;
-use util::ResultExt;
+
+use super::renderer;
 
 #[allow(non_upper_case_globals)]
 const NSUTF8StringEncoding: NSUInteger = 4;
@@ -551,12 +552,6 @@ impl Platform for MacPlatform {
             .collect()
     }
 
-    fn screen_capture_sources(
-        &self,
-    ) -> oneshot::Receiver<Result<Vec<Box<dyn ScreenCaptureSource>>>> {
-        screen_capture::get_sources()
-    }
-
     fn active_window(&self) -> Option<AnyWindowHandle> {
         MacWindow::active_window()
     }
@@ -780,16 +775,15 @@ impl Platform for MacPlatform {
     }
 
     fn open_with_system(&self, path: &Path) {
-        let path = path.to_owned();
+        let path = path.to_path_buf();
         self.0
             .lock()
             .background_executor
             .spawn(async move {
-                let _ = std::process::Command::new("open")
+                std::process::Command::new("open")
                     .arg(path)
                     .spawn()
-                    .context("invoking open command")
-                    .log_err();
+                    .expect("Failed to open file");
             })
             .detach();
     }

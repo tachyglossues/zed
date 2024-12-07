@@ -810,7 +810,7 @@ impl Workspace {
                     this.collaborator_left(*peer_id, cx);
                 }
 
-                project::Event::WorktreeRemoved(_) | project::Event::WorktreeAdded(_) => {
+                project::Event::WorktreeRemoved(_) | project::Event::WorktreeAdded => {
                     this.update_window_title(cx);
                     this.serialize_workspace(cx);
                 }
@@ -832,7 +832,7 @@ impl Workspace {
                     cx.remove_window();
                 }
 
-                project::Event::DeletedEntry(_, entry_id) => {
+                project::Event::DeletedEntry(entry_id) => {
                     for pane in this.panes.iter() {
                         pane.update(cx, |pane, cx| {
                             pane.handle_deleted_project_item(*entry_id, cx)
@@ -3944,17 +3944,6 @@ impl Workspace {
         None
     }
 
-    #[cfg(target_os = "windows")]
-    fn shared_screen_for_peer(
-        &self,
-        _peer_id: PeerId,
-        _pane: &View<Pane>,
-        _cx: &mut WindowContext,
-    ) -> Option<View<SharedScreen>> {
-        None
-    }
-
-    #[cfg(not(target_os = "windows"))]
     fn shared_screen_for_peer(
         &self,
         peer_id: PeerId,
@@ -3973,7 +3962,7 @@ impl Workspace {
             }
         }
 
-        Some(cx.new_view(|cx| SharedScreen::new(track, peer_id, user.clone(), cx)))
+        Some(cx.new_view(|cx| SharedScreen::new(&track, peer_id, user.clone(), cx)))
     }
 
     pub fn on_window_activation_changed(&mut self, cx: &mut ViewContext<Self>) {
