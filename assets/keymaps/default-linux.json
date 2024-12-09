@@ -108,9 +108,7 @@
       "ctrl-'": "editor::ToggleHunkDiff",
       "ctrl-\"": "editor::ExpandAllHunkDiffs",
       "ctrl-i": "editor::ShowSignatureHelp",
-      "alt-g b": "editor::ToggleGitBlame",
-      "menu": "editor::OpenContextMenu",
-      "shift-f10": "editor::OpenContextMenu"
+      "alt-g b": "editor::ToggleGitBlame"
     }
   },
   {

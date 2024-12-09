@@ -1,6 +1,7 @@
 use gpui::{AppContext, Model, ModelContext};
 use language::Buffer;
 use std::ops::Range;
+use text::{Anchor, Rope};
 
 // TODO: Find a better home for `Direction`.
 //
@@ -12,9 +13,15 @@ pub enum Direction {
     Next,
 }
 
-#[derive(Clone)]
-pub struct InlineCompletion {
-    pub edits: Vec<(Range<language::Anchor>, String)>,
+pub enum InlayProposal {
+    Hint(Anchor, project::InlayHint),
+    Suggestion(Anchor, Rope),
+}
+
+pub struct CompletionProposal {
+    pub inlays: Vec<InlayProposal>,
+    pub text: Rope,
+    pub delete_range: Option<Range<Anchor>>,
 }
 
 pub trait InlineCompletionProvider: 'static + Sized {
@@ -40,17 +47,16 @@ pub trait InlineCompletionProvider: 'static + Sized {
         cx: &mut ModelContext<Self>,
     );
     fn accept(&mut self, cx: &mut ModelContext<Self>);
-    fn discard(&mut self, cx: &mut ModelContext<Self>);
-    fn suggest(
-        &mut self,
+    fn discard(&mut self, should_report_inline_completion_event: bool, cx: &mut ModelContext<Self>);
+    fn active_completion_text<'a>(
+        &'a self,
         buffer: &Model<Buffer>,
         cursor_position: language::Anchor,
-        cx: &mut ModelContext<Self>,
-    ) -> Option<InlineCompletion>;
+        cx: &'a AppContext,
+    ) -> Option<CompletionProposal>;
 }
 
 pub trait InlineCompletionProviderHandle {
-    fn name(&self) -> &'static str;
     fn is_enabled(
         &self,
         buffer: &Model<Buffer>,
@@ -72,23 +78,19 @@ pub trait InlineCompletionProviderHandle {
         cx: &mut AppContext,
     );
     fn accept(&self, cx: &mut AppContext);
-    fn discard(&self, cx: &mut AppContext);
-    fn suggest(
-        &self,
+    fn discard(&self, should_report_inline_completion_event: bool, cx: &mut AppContext);
+    fn active_completion_text<'a>(
+        &'a self,
         buffer: &Model<Buffer>,
         cursor_position: language::Anchor,
-        cx: &mut AppContext,
-    ) -> Option<InlineCompletion>;
+        cx: &'a AppContext,
+    ) -> Option<CompletionProposal>;
 }
 
 impl<T> InlineCompletionProviderHandle for Model<T>
 where
     T: InlineCompletionProvider,
 {
-    fn name(&self) -> &'static str {
-        T::name()
-    }
-
     fn is_enabled(
         &self,
         buffer: &Model<Buffer>,
@@ -126,16 +128,19 @@ where
         self.update(cx, |this, cx| this.accept(cx))
     }
 
-    fn discard(&self, cx: &mut AppContext) {
-        self.update(cx, |this, cx| this.discard(cx))
+    fn discard(&self, should_report_inline_completion_event: bool, cx: &mut AppContext) {
+        self.update(cx, |this, cx| {
+            this.discard(should_report_inline_completion_event, cx)
+        })
     }
 
-    fn suggest(
-        &self,
+    fn active_completion_text<'a>(
+        &'a self,
         buffer: &Model<Buffer>,
         cursor_position: language::Anchor,
-        cx: &mut AppContext,
-    ) -> Option<InlineCompletion> {
-        self.update(cx, |this, cx| this.suggest(buffer, cursor_position, cx))
+        cx: &'a AppContext,
+    ) -> Option<CompletionProposal> {
+        self.read(cx)
+            .active_completion_text(buffer, cursor_position, cx)
     }
 }

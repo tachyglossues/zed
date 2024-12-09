@@ -9,7 +9,6 @@ use std::time::{Duration, Instant};
 use calloop::generic::{FdWrapper, Generic};
 use calloop::{EventLoop, LoopHandle, RegistrationToken};
 
-use anyhow::Context as _;
 use collections::HashMap;
 use http_client::Url;
 use smallvec::SmallVec;
@@ -1418,10 +1417,9 @@ impl LinuxClient for X11Client {
                     ..Default::default()
                 },
             )
-            .anyhow()
-            .and_then(|cookie| cookie.check().anyhow())
-            .context("setting cursor style")
-            .log_err();
+            .expect("failed to change window cursor")
+            .check()
+            .unwrap();
     }
 
     fn open_uri(&self, uri: &str) {

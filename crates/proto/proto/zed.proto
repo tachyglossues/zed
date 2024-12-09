@@ -301,10 +301,7 @@ message Envelope {
 
         SyncExtensions sync_extensions = 285;
         SyncExtensionsResponse sync_extensions_response = 286;
-        InstallExtension install_extension = 287;
-
-        GetStagedText get_staged_text = 288;
-        GetStagedTextResponse get_staged_text_response = 289; // current max
+        InstallExtension install_extension = 287; // current max
     }
 
     reserved 87 to 88;
@@ -432,7 +429,7 @@ message Room {
     repeated Participant participants = 2;
     repeated PendingParticipant pending_participants = 3;
     repeated Follower followers = 4;
-    string livekit_room = 5;
+    string live_kit_room = 5;
 }
 
 message Participant {
@@ -1791,12 +1788,11 @@ message BufferState {
     uint64 id = 1;
     optional File file = 2;
     string base_text = 3;
+    optional string diff_base = 4;
     LineEnding line_ending = 5;
     repeated VectorClockEntry saved_version = 6;
-    Timestamp saved_mtime = 8;
-
     reserved 7;
-    reserved 4;
+    Timestamp saved_mtime = 8;
 }
 
 message BufferChunk {
@@ -1987,16 +1983,7 @@ message WorktreeMetadata {
 message UpdateDiffBase {
     uint64 project_id = 1;
     uint64 buffer_id = 2;
-    optional string staged_text = 3;
-}
-
-message GetStagedText {
-    uint64 project_id = 1;
-    uint64 buffer_id = 2;
-}
-
-message GetStagedTextResponse {
-    optional string staged_text = 1;
+    optional string diff_base = 3;
 }
 
 message GetNotifications {

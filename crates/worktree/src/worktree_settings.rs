@@ -40,7 +40,6 @@ pub struct WorktreeSettingsContent {
     ///   "**/.git",
     ///   "**/.svn",
     ///   "**/.hg",
-    ///   "**/.jj",
     ///   "**/CVS",
     ///   "**/.DS_Store",
     ///   "**/Thumbs.db",

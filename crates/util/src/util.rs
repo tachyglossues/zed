@@ -206,9 +206,6 @@ pub trait ResultExt<E> {
     /// Assert that this result should never be an error in development or tests.
     fn debug_assert_ok(self, reason: &str) -> Self;
     fn warn_on_err(self) -> Option<Self::Ok>;
-    fn anyhow(self) -> anyhow::Result<Self::Ok>
-    where
-        E: Into<anyhow::Error>;
 }
 
 impl<T, E> ResultExt<E> for Result<T, E>
@@ -245,13 +242,6 @@ where
                 None
             }
         }
-    }
-
-    fn anyhow(self) -> anyhow::Result<T>
-    where
-        E: Into<anyhow::Error>,
-    {
-        self.map_err(Into::into)
     }
 }
 
