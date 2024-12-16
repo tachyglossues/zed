@@ -129,7 +129,7 @@ use multi_buffer::{
 };
 use parking_lot::RwLock;
 use project::{
-    lsp_store::{FormatTarget, FormatTrigger, OpenLspBufferHandle},
+    lsp_store::{CompletionsMatchState, FormatTarget, FormatTrigger, OpenLspBufferHandle},
     project_settings::{GitGutterSetting, ProjectSettings},
     CodeAction, Completion, CompletionIntent, DocumentHighlight, InlayHint, Location, LocationLink,
     LspStore, Project, ProjectItem, ProjectTransaction, TaskSourceKind,
@@ -3791,12 +3791,15 @@ impl Editor {
                 return None;
             };
 
+        // TODO: Fields can be made private and this can be extracted into a function once
+        // MappedRwLockReadGuard is stable.
+        let completions_state = completions_menu.completions_state.read();
         let mat = completions_menu
             .matches
             .get(item_ix.unwrap_or(completions_menu.selected_item))?;
+        let completion = completions_state.completions.get(mat.candidate_id)?;
+
         let buffer_handle = completions_menu.buffer;
-        let completions = completions_menu.completions.read();
-        let completion = completions.get(mat.candidate_id)?;
         cx.stop_propagation();
 
         let snippet;
@@ -13314,7 +13317,7 @@ pub trait CompletionProvider {
         &self,
         buffer: Model<Buffer>,
         completion_indices: Vec<usize>,
-        completions: Arc<RwLock<Box<[Completion]>>>,
+        completions: Arc<RwLock<CompletionsMatchState>>,
         cx: &mut ViewContext<Editor>,
     ) -> Task<Result<bool>>;
 
@@ -13544,7 +13547,7 @@ impl CompletionProvider for Model<Project> {
         &self,
         buffer: Model<Buffer>,
         completion_indices: Vec<usize>,
-        completions: Arc<RwLock<Box<[Completion]>>>,
+        completions: Arc<RwLock<CompletionsMatchState>>,
         cx: &mut ViewContext<Editor>,
     ) -> Task<Result<bool>> {
         self.update(cx, |project, cx| {
