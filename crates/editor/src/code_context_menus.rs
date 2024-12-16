@@ -2,9 +2,9 @@ use std::{cell::Cell, cmp::Reverse, ops::Range, sync::Arc};
 
 use fuzzy::{StringMatch, StringMatchCandidate};
 use gpui::{
-    div, px, uniform_list, AnyElement, BackgroundExecutor, Div, FontWeight, ListSizingBehavior,
-    Model, MouseButton, Pixels, ScrollStrategy, SharedString, StrikethroughStyle, StyledText,
-    UniformListScrollHandle, ViewContext, WeakView,
+    div, px, uniform_list, AnyElement, Div, FontWeight, ListSizingBehavior, Model, MouseButton,
+    Pixels, ScrollStrategy, SharedString, StrikethroughStyle, StyledText, UniformListScrollHandle,
+    ViewContext, WeakView,
 };
 use language::Buffer;
 use language::{CodeLabel, Documentation};
@@ -515,17 +515,15 @@ impl CompletionsMenu {
             .into_any_element()
     }
 
-    pub async fn filter(&mut self, query: Option<&str>, executor: BackgroundExecutor) {
+    pub fn filter(&mut self, query: Option<&str>) {
         let mut matches = if let Some(query) = query {
-            fuzzy::match_strings(
+            fuzzy::match_strings_synchronously(
                 &self.completions_state.read().match_candidates,
                 query,
                 query.chars().any(|c| c.is_uppercase()),
                 100,
                 &Default::default(),
-                executor,
             )
-            .await
         } else {
             self.completions_state
                 .read()

@@ -1887,7 +1887,7 @@ impl Editor {
         if local {
             let new_cursor_position = self.selections.newest_anchor().head();
             let mut context_menu = self.context_menu.write();
-            let completion_menu = match context_menu.as_ref() {
+            let mut completion_menu = match context_menu.as_mut() {
                 Some(CodeContextMenu::Completions(menu)) => Some(menu),
 
                 _ => {
@@ -1896,40 +1896,17 @@ impl Editor {
                 }
             };
 
-            if let Some(completion_menu) = completion_menu {
+            if let Some(ref mut completion_menu) = completion_menu.as_mut() {
                 let cursor_position = new_cursor_position.to_offset(buffer);
                 let (word_range, kind) =
                     buffer.surrounding_word(completion_menu.initial_position, true);
                 if kind == Some(CharKind::Word)
                     && word_range.to_inclusive().contains(&cursor_position)
                 {
-                    let mut completion_menu = completion_menu.clone();
-                    drop(context_menu);
-
                     let query = Self::completion_query(buffer, cursor_position);
-                    cx.spawn(move |this, mut cx| async move {
-                        completion_menu
-                            .filter(query.as_deref(), cx.background_executor().clone())
-                            .await;
-
-                        this.update(&mut cx, |this, cx| {
-                            let mut context_menu = this.context_menu.write();
-                            let Some(CodeContextMenu::Completions(menu)) = context_menu.as_ref()
-                            else {
-                                return;
-                            };
-
-                            if menu.id > completion_menu.id {
-                                return;
-                            }
-
-                            *context_menu = Some(CodeContextMenu::Completions(completion_menu));
-                            drop(context_menu);
-                            cx.notify();
-                        })
-                    })
-                    .detach();
-
+                    completion_menu.filter(query.as_deref());
+                    cx.notify();
+                    drop(context_menu);
                     if show_completions {
                         self.show_completions(&ShowCompletions { trigger: None }, cx);
                     }
@@ -3710,8 +3687,7 @@ impl Editor {
                         completions.into(),
                         aside_was_displayed,
                     );
-                    menu.filter(query.as_deref(), cx.background_executor().clone())
-                        .await;
+                    menu.filter(query.as_deref());
 
                     if menu.matches.is_empty() {
                         None

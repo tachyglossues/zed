@@ -138,12 +138,7 @@ pub async fn match_strings(
     if query.is_empty() {
         return candidates
             .iter()
-            .map(|candidate| StringMatch {
-                candidate_id: candidate.id,
-                score: 0.,
-                positions: Default::default(),
-                string: candidate.string.clone(),
-            })
+            .map(|candidate| scored_candidate_to_string_match(&candidate, 0.))
             .collect();
     }
 
@@ -181,12 +176,7 @@ pub async fn match_strings(
                         candidates[segment_start..segment_end].iter(),
                         results,
                         cancel_flag,
-                        |candidate, score| StringMatch {
-                            candidate_id: candidate.id,
-                            score,
-                            positions: Vec::new(),
-                            string: candidate.string.to_string(),
-                        },
+                        scored_candidate_to_string_match,
                     );
                 });
             }
@@ -202,4 +192,58 @@ pub async fn match_strings(
         }
     }
     results
+}
+
+pub fn match_strings_synchronously(
+    candidates: &[StringMatchCandidate],
+    query: &str,
+    smart_case: bool,
+    max_results: usize,
+    cancel_flag: &AtomicBool,
+) -> Vec<StringMatch> {
+    if candidates.is_empty() || max_results == 0 {
+        return Default::default();
+    }
+
+    if query.is_empty() {
+        return candidates
+            .iter()
+            .map(|candidate| scored_candidate_to_string_match(&candidate, 0.))
+            .collect();
+    }
+
+    let lowercase_query = query.to_lowercase().chars().collect::<Vec<_>>();
+    let query = query.chars().collect::<Vec<_>>();
+
+    let lowercase_query = &lowercase_query;
+    let query = &query;
+    let query_char_bag = CharBag::from(&lowercase_query[..]);
+
+    let mut matcher = Matcher::new(
+        query,
+        lowercase_query,
+        query_char_bag,
+        smart_case,
+        max_results,
+    );
+
+    let mut results = Vec::with_capacity(max_results);
+    matcher.match_candidates(
+        &[],
+        &[],
+        candidates.iter(),
+        &mut results,
+        cancel_flag,
+        scored_candidate_to_string_match,
+    );
+    results
+}
+
+fn scored_candidate_to_string_match(candidate: &&StringMatchCandidate, score: f64) -> StringMatch {
+    StringMatch {
+        candidate_id: candidate.id,
+        score,
+        positions: Vec::new(),
+        string: candidate.string.to_string(),
+    }
 }
