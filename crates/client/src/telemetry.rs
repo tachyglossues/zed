@@ -1,6 +1,6 @@
 mod event_coalescer;
 
-use crate::{ChannelId, TelemetrySettings};
+use crate::TelemetrySettings;
 use anyhow::Result;
 use clock::SystemClock;
 use collections::{HashMap, HashSet};
@@ -18,8 +18,7 @@ use std::io::Write;
 use std::time::Instant;
 use std::{env, mem, path::PathBuf, sync::Arc, time::Duration};
 use telemetry_events::{
-    AppEvent, AssistantEvent, CallEvent, EditEvent, Event, EventRequestBody, EventWrapper,
-    InlineCompletionEvent,
+    AppEvent, EditEvent, Event, EventRequestBody, EventWrapper, InlineCompletionEvent,
 };
 use util::{ResultExt, TryFutureExt};
 use worktree::{UpdatedEntriesSet, WorktreeId};
@@ -344,25 +343,6 @@ impl Telemetry {
             provider,
             suggestion_accepted,
             file_extension,
-        });
-
-        self.report_event(event)
-    }
-
-    pub fn report_assistant_event(self: &Arc<Self>, event: AssistantEvent) {
-        self.report_event(Event::Assistant(event));
-    }
-
-    pub fn report_call_event(
-        self: &Arc<Self>,
-        operation: &'static str,
-        room_id: Option<u64>,
-        channel_id: Option<ChannelId>,
-    ) {
-        let event = Event::Call(CallEvent {
-            operation: operation.to_string(),
-            room_id,
-            channel_id: channel_id.map(|cid| cid.0),
         });
 
         self.report_event(event)
