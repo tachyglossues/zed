@@ -17,9 +17,7 @@ use std::fs::File;
 use std::io::Write;
 use std::time::Instant;
 use std::{env, mem, path::PathBuf, sync::Arc, time::Duration};
-use telemetry_events::{
-    AppEvent, EditEvent, Event, EventRequestBody, EventWrapper, InlineCompletionEvent,
-};
+use telemetry_events::{AppEvent, EditEvent, Event, EventRequestBody, EventWrapper};
 use util::{ResultExt, TryFutureExt};
 use worktree::{UpdatedEntriesSet, WorktreeId};
 
@@ -331,21 +329,6 @@ impl Telemetry {
         state.metrics_id.clone_from(&metrics_id);
         state.is_staff = Some(is_staff);
         drop(state);
-    }
-
-    pub fn report_inline_completion_event(
-        self: &Arc<Self>,
-        provider: String,
-        suggestion_accepted: bool,
-        file_extension: Option<String>,
-    ) {
-        let event = Event::InlineCompletion(InlineCompletionEvent {
-            provider,
-            suggestion_accepted,
-            file_extension,
-        });
-
-        self.report_event(event)
     }
 
     pub fn report_app_event(self: &Arc<Self>, operation: String) -> Event {
