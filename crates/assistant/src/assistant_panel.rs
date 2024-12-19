@@ -410,7 +410,7 @@ impl AssistantPanel {
                 });
 
                 if let Some(action) = action {
-                    cx.dispatch_action(action.boxed_clone());
+                    cx.dispatch_action(&action);
                 }
 
                 ControlFlow::Break(())

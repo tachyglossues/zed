@@ -5,7 +5,7 @@ use crate::{
 };
 use gpui::{
     px, Action, AnyElement, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView,
-    IntoElement, Render, Subscription, Model, VisualContext,
+    IntoElement, Model, Render, Subscription, VisualContext,
 };
 use menu::{SelectFirst, SelectLast, SelectNext, SelectPrev};
 use settings::Settings;
@@ -228,7 +228,7 @@ impl ContextMenu {
             | ContextMenuItem::CustomEntry { handler, .. },
         ) = self.selected_index.and_then(|ix| self.items.get(ix))
         {
-            (handler)(context, cx)
+            (handler)(context, cx.window_context())
         }
 
         cx.emit(DismissEvent);
@@ -325,7 +325,7 @@ impl ContextMenu {
                     .await;
                 this.update(&mut cx, |this, cx| {
                     this.cancel(&menu::Cancel, cx);
-                    cx.dispatch_action(action);
+                    cx.dispatch_action(&action);
                 })
             })
             .detach_and_log_err(cx);
@@ -467,7 +467,10 @@ impl Render for ContextMenu {
                                                             )
                                                         })
                                                         .unwrap_or_else(|| {
-                                                            KeyBinding::for_action(&**action, cx)
+                                                            KeyBinding::for_action(
+                                                                &**action,
+                                                                cx.window_context(),
+                                                            )
                                                         })
                                                         .map(|binding| div().ml_4().child(binding))
                                                 })),
@@ -514,7 +517,7 @@ impl Render for ContextMenu {
                                                 }
                                             })
                                         })
-                                        .child(entry_render(cx))
+                                        .child(entry_render(cx.window_context()))
                                         .into_any_element()
                                 }
                             }

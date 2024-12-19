@@ -23,12 +23,16 @@ impl KeyBinding {
 
     // like for_action(), but lets you specify the context from which keybindings
     // are matched.
-    pub fn for_action_in(
+    pub fn for_action_in<T: 'static>(
         action: &dyn Action,
         focus: &FocusHandle,
-        cx: &mut WindowContext,
+        cx: &mut ViewContext<T>,
     ) -> Option<Self> {
-        let key_binding = cx.bindings_for_action_in(action, focus).last().cloned()?;
+        let key_binding = cx
+            .window_context()
+            .bindings_for_action_in(action, focus)
+            .last()
+            .cloned()?;
         Some(Self::new(key_binding))
     }
 
