@@ -7,8 +7,8 @@ use file_finder::file_finder_settings::FileFinderSettings;
 use file_icons::FileIcons;
 use fuzzy::{match_strings, StringMatch, StringMatchCandidate};
 use gpui::{
-    actions, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView, Model,
-    ParentElement, Render, Styled, Model, ViewContext, VisualContext, WeakModel,
+    actions, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView, Model, Model,
+    ParentElement, Render, Styled, ViewContext, VisualContext, WeakModel,
 };
 use language::{Buffer, LanguageMatcher, LanguageName, LanguageRegistry};
 use picker::{Picker, PickerDelegate};

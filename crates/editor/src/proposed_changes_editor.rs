@@ -1,7 +1,7 @@
 use crate::{ApplyAllDiffHunks, Editor, EditorEvent, SemanticsProvider};
 use collections::HashSet;
 use futures::{channel::mpsc, future::join_all};
-use gpui::{AppContext, EventEmitter, FocusableView, Model, Render, Subscription, Task, Model};
+use gpui::{AppContext, EventEmitter, FocusableView, Model, Model, Render, Subscription, Task};
 use language::{Buffer, BufferEvent, Capability};
 use multi_buffer::{ExcerptRange, MultiBuffer};
 use project::{buffer_store::BufferChangeSet, Project};

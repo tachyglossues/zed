@@ -6,7 +6,7 @@ use client::zed_urls;
 use fs::Fs;
 use gpui::{
     prelude::*, px, svg, Action, AnyElement, AppContext, AsyncWindowContext, EventEmitter,
-    FocusHandle, FocusableView, FontWeight, Model, Pixels, Task, Model, ViewContext, WeakModel,
+    FocusHandle, FocusableView, FontWeight, Model, Model, Pixels, Task, ViewContext, WeakModel,
     WindowContext,
 };
 use language::LanguageRegistry;

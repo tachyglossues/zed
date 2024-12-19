@@ -15,8 +15,8 @@ use file_icons::FileIcons;
 use fuzzy::{CharBag, PathMatch, PathMatchCandidate};
 use gpui::{
     actions, Action, AnyElement, AppContext, DismissEvent, EventEmitter, FocusHandle,
-    FocusableView, KeyContext, Model, Modifiers, ModifiersChangedEvent, ParentElement, Render,
-    Styled, Task, Model, ViewContext, VisualContext, WeakModel,
+    FocusableView, KeyContext, Model, Model, Modifiers, ModifiersChangedEvent, ParentElement,
+    Render, Styled, Task, ViewContext, VisualContext, WeakModel,
 };
 use new_path_prompt::NewPathPrompt;
 use open_path_prompt::OpenPathPrompt;

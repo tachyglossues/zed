@@ -1,7 +1,7 @@
 use collections::{HashMap, HashSet};
 use git::diff::DiffHunkStatus;
 use gpui::{
-    Action, AppContext, Corner, CursorStyle, Hsla, Model, MouseButton, Subscription, Task, Model,
+    Action, AppContext, Corner, CursorStyle, Hsla, Model, Model, MouseButton, Subscription, Task,
 };
 use language::{Buffer, BufferId, Point};
 use multi_buffer::{

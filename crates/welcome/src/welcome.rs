@@ -6,8 +6,8 @@ use client::{telemetry::Telemetry, TelemetrySettings};
 use db::kvp::KEY_VALUE_STORE;
 use gpui::{
     actions, svg, Action, AppContext, EventEmitter, FocusHandle, FocusableView, InteractiveElement,
-    ParentElement, Render, Styled, Subscription, Task, Model, ViewContext, VisualContext, WeakModel,
-    WindowContext,
+    Model, ParentElement, Render, Styled, Subscription, Task, ViewContext, VisualContext,
+    WeakModel, WindowContext,
 };
 use settings::{Settings, SettingsStore};
 use std::sync::Arc;

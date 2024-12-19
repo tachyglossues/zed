@@ -6,9 +6,9 @@
 use gpui::{
     actions, bounds, div, point,
     prelude::{FluentBuilder as _, IntoElement},
-    px, rgb, size, AsyncAppContext, Bounds, InteractiveElement, KeyBinding, Menu, MenuItem,
+    px, rgb, size, AsyncAppContext, Bounds, InteractiveElement, KeyBinding, Menu, MenuItem, Model,
     ParentElement, Pixels, Render, ScreenCaptureStream, SharedString,
-    StatefulInteractiveElement as _, Styled, Task, Model, ViewContext, VisualContext, WindowBounds,
+    StatefulInteractiveElement as _, Styled, Task, ViewContext, VisualContext, WindowBounds,
     WindowHandle, WindowOptions,
 };
 #[cfg(not(target_os = "windows"))]

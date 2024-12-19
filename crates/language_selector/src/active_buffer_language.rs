@@ -1,5 +1,5 @@
 use editor::Editor;
-use gpui::{div, IntoElement, ParentElement, Render, Subscription, Model, ViewContext, WeakModel};
+use gpui::{div, IntoElement, Model, ParentElement, Render, Subscription, ViewContext, WeakModel};
 use language::LanguageName;
 use ui::{Button, ButtonCommon, Clickable, FluentBuilder, LabelSize, Tooltip};
 use workspace::{item::ItemHandle, StatusItemView, Workspace};

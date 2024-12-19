@@ -3,9 +3,10 @@ use gpui::{
     div, fill, point, px, relative, size, AnyElement, AvailableSpace, Bounds, ContentMask,
     DispatchPhase, Element, ElementId, FocusHandle, Font, FontStyle, FontWeight, GlobalElementId,
     HighlightStyle, Hitbox, Hsla, InputHandler, InteractiveElement, Interactivity, IntoElement,
-    LayoutId, Model, ModelContext, ModifiersChangedEvent, MouseButton, MouseMoveEvent, Pixels,
-    Point, ShapedLine, StatefulInteractiveElement, StrikethroughStyle, Styled, TextRun, TextStyle,
-    UTF16Selection, UnderlineStyle, Model, WeakModel, WhiteSpace, WindowContext, WindowTextSystem,
+    LayoutId, Model, Model, ModelContext, ModifiersChangedEvent, MouseButton, MouseMoveEvent,
+    Pixels, Point, ShapedLine, StatefulInteractiveElement, StrikethroughStyle, Styled, TextRun,
+    TextStyle, UTF16Selection, UnderlineStyle, WeakModel, WhiteSpace, WindowContext,
+    WindowTextSystem,
 };
 use itertools::Itertools;
 use language::CursorShape;

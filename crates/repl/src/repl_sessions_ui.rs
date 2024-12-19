@@ -1,7 +1,7 @@
 use editor::Editor;
 use gpui::{
-    actions, prelude::*, AnyElement, AppContext, EventEmitter, FocusHandle, FocusableView,
-    Subscription, Model,
+    actions, prelude::*, AnyElement, AppContext, EventEmitter, FocusHandle, FocusableView, Model,
+    Subscription,
 };
 use project::ProjectItem as _;
 use ui::{prelude::*, ButtonLike, ElevationIndex, KeyBinding};

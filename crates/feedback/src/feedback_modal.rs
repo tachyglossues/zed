@@ -11,8 +11,8 @@ use db::kvp::KEY_VALUE_STORE;
 use editor::{Editor, EditorEvent};
 use futures::AsyncReadExt;
 use gpui::{
-    div, rems, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView, Model,
-    PromptLevel, Render, Task, Model, ViewContext,
+    div, rems, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView, Model, Model,
+    PromptLevel, Render, Task, ViewContext,
 };
 use http_client::HttpClient;
 use language::Buffer;

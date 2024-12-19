@@ -4,9 +4,9 @@ use std::{cell::Cell, ops::Range, rc::Rc};
 use crate::{prelude::*, px, relative, IntoElement};
 use gpui::{
     point, quad, Along, Axis as ScrollbarAxis, Bounds, ContentMask, Corners, Edges, Element,
-    ElementId, Entity, EntityId, GlobalElementId, Hitbox, Hsla, LayoutId, MouseDownEvent,
+    ElementId, Entity, EntityId, GlobalElementId, Hitbox, Hsla, LayoutId, Model, MouseDownEvent,
     MouseMoveEvent, MouseUpEvent, Pixels, Point, ScrollHandle, ScrollWheelEvent, Size, Style,
-    UniformListScrollHandle, Model, WindowContext,
+    UniformListScrollHandle, WindowContext,
 };
 
 pub struct Scrollbar {

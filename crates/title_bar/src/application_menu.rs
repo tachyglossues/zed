@@ -1,4 +1,4 @@
-use gpui::{OwnedMenu, OwnedMenuItem, Model};
+use gpui::{Model, OwnedMenu, OwnedMenuItem};
 use smallvec::SmallVec;
 use ui::{prelude::*, ContextMenu, PopoverMenu, PopoverMenuHandle, Tooltip};
 

@@ -1,7 +1,7 @@
 use fs::Fs;
 use fuzzy::{match_strings, StringMatch, StringMatchCandidate};
 use gpui::{
-    actions, AppContext, DismissEvent, EventEmitter, FocusableView, Render, UpdateGlobal, Model,
+    actions, AppContext, DismissEvent, EventEmitter, FocusableView, Model, Render, UpdateGlobal,
     ViewContext, VisualContext, WeakModel,
 };
 use picker::{Picker, PickerDelegate};

@@ -11,7 +11,7 @@ use editor::actions::{
 use editor::{Editor, EditorSettings};
 use gpui::{
     Action, ClickEvent, Corner, ElementId, EventEmitter, FocusHandle, FocusableView,
-    InteractiveElement, ParentElement, Render, Styled, Subscription, Model, ViewContext, WeakModel,
+    InteractiveElement, Model, ParentElement, Render, Styled, Subscription, ViewContext, WeakModel,
 };
 use search::{buffer_search, BufferSearchBar};
 use settings::{Settings, SettingsStore};

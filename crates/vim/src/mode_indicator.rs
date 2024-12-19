@@ -1,4 +1,4 @@
-use gpui::{div, Element, Render, Subscription, Model, ViewContext, WeakModel};
+use gpui::{div, Element, Model, Render, Subscription, ViewContext, WeakModel};
 use itertools::Itertools;
 use workspace::{item::ItemHandle, ui::prelude::*, StatusItemView};
 

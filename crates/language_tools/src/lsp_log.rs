@@ -4,7 +4,7 @@ use editor::{actions::MoveToEnd, Editor, EditorEvent};
 use futures::{channel::mpsc, StreamExt};
 use gpui::{
     actions, div, AppContext, Context, Corner, EventEmitter, FocusHandle, FocusableView,
-    IntoElement, Model, ModelContext, ParentElement, Render, Styled, Subscription, Model,
+    IntoElement, Model, Model, ModelContext, ParentElement, Render, Styled, Subscription,
     ViewContext, VisualContext, WeakModel, WindowContext,
 };
 use language::LanguageServerId;

@@ -1,4 +1,4 @@
-use gpui::{Render, Model};
+use gpui::{Model, Render};
 use story::{Story, StoryItem, StorySection};
 
 use ui::prelude::*;

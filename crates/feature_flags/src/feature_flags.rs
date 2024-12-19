@@ -107,7 +107,7 @@ impl FeatureFlag for AutoCommand {
 pub trait FeatureFlagViewExt<V: 'static> {
     fn observe_flag<T: FeatureFlag, F>(&mut self, callback: F) -> Subscription
     where
-        F: for<'f> Fn(bool, &mut V, & mut ModelContext<'f, V>) + Send + Sync + 'static;
+        F: for<'f> Fn(bool, &mut V, &mut ModelContext<'f, V>) + Send + Sync + 'static;
 }
 
 impl<V> FeatureFlagViewExt<V> for ViewContext<'_, V>
@@ -116,7 +116,7 @@ where
 {
     fn observe_flag<T: FeatureFlag, F>(&mut self, callback: F) -> Subscription
     where
-        F: for<'f> Fn(bool, &mut V, & mut ModelContext<'f, V>) + 'static,
+        F: for<'f> Fn(bool, &mut V, &mut ModelContext<'f, V>) + 'static,
     {
         self.observe_global::<FeatureFlags>(move |v, cx| {
             let feature_flags = cx.global::<FeatureFlags>();

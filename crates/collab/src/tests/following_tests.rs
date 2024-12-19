@@ -8,8 +8,8 @@ use collab_ui::{
 };
 use editor::{Editor, ExcerptRange, MultiBuffer};
 use gpui::{
-    point, BackgroundExecutor, BorrowAppContext, Context, Entity, SharedString, TestAppContext,
-    Model, VisualContext, VisualTestContext,
+    point, BackgroundExecutor, BorrowAppContext, Context, Entity, Model, SharedString,
+    TestAppContext, VisualContext, VisualTestContext,
 };
 use language::Capability;
 use project::WorktreeSettings;

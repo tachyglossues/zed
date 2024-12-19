@@ -10,7 +10,7 @@ use futures::future::Shared;
 use futures::FutureExt;
 use gpui::{
     actions, list, prelude::*, AnyElement, AppContext, EventEmitter, FocusHandle, FocusableView,
-    ListScrollEvent, ListState, Model, Point, Task, Model,
+    ListScrollEvent, ListState, Model, Model, Point, Task,
 };
 use language::{Language, LanguageRegistry};
 use project::{Project, ProjectEntryId, ProjectPath};

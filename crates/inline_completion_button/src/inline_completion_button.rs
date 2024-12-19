@@ -4,8 +4,8 @@ use editor::{scroll::Autoscroll, Editor};
 use feature_flags::{FeatureFlagAppExt, ZetaFeatureFlag};
 use fs::Fs;
 use gpui::{
-    actions, div, Action, AppContext, AsyncWindowContext, Corner, Entity, IntoElement,
-    ParentElement, Render, Subscription, Model, ViewContext, WeakModel, WindowContext,
+    actions, div, Action, AppContext, AsyncWindowContext, Corner, Entity, IntoElement, Model,
+    ParentElement, Render, Subscription, ViewContext, WeakModel, WindowContext,
 };
 use language::{
     language_settings::{

@@ -6,7 +6,7 @@ use extension_host::{ExtensionSettings, ExtensionStore};
 use fs::Fs;
 use fuzzy::{match_strings, StringMatch, StringMatchCandidate};
 use gpui::{
-    prelude::*, AppContext, DismissEvent, EventEmitter, FocusableView, Task, Model, WeakModel,
+    prelude::*, AppContext, DismissEvent, EventEmitter, FocusableView, Model, Task, WeakModel,
 };
 use picker::{Picker, PickerDelegate};
 use release_channel::ReleaseChannel;

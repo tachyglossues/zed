@@ -18,7 +18,7 @@ use feature_flags::{FeatureFlagAppExt as _, ZedPro};
 use fs::Fs;
 use gpui::{
     anchored, deferred, point, AnyElement, AppContext, ClickEvent, CursorStyle, EventEmitter,
-    FocusHandle, FocusableView, FontWeight, Model, Subscription, TextStyle, Model, ViewContext,
+    FocusHandle, FocusableView, FontWeight, Model, Model, Subscription, TextStyle, ViewContext,
     WeakModel, WeakModel, WindowContext,
 };
 use language_model::{LanguageModel, LanguageModelRegistry};

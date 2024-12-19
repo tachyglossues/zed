@@ -16,9 +16,9 @@ use editor::{
 };
 use gpui::{
     actions, div, svg, AnyElement, AnyView, AppContext, Context, EventEmitter, FocusHandle,
-    FocusableView, Global, HighlightStyle, InteractiveElement, IntoElement, Model, ParentElement,
-    Render, SharedString, Styled, StyledText, Subscription, Task, Model, ViewContext, VisualContext,
-    WeakModel, WindowContext,
+    FocusableView, Global, HighlightStyle, InteractiveElement, IntoElement, Model, Model,
+    ParentElement, Render, SharedString, Styled, StyledText, Subscription, Task, ViewContext,
+    VisualContext, WeakModel, WindowContext,
 };
 use language::{
     Bias, Buffer, Diagnostic, DiagnosticEntry, DiagnosticSeverity, Point, Selection, SelectionGoal,

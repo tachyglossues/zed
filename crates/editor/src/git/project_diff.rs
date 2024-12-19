@@ -15,7 +15,7 @@ use git::{
 };
 use gpui::{
     actions, AnyElement, AnyView, AppContext, EventEmitter, FocusHandle, FocusableView,
-    InteractiveElement, Model, Render, Subscription, Task, Model, WeakModel,
+    InteractiveElement, Model, Model, Render, Subscription, Task, WeakModel,
 };
 use language::{Buffer, BufferRow};
 use multi_buffer::{ExcerptId, ExcerptRange, ExpandExcerptDirection, MultiBuffer};

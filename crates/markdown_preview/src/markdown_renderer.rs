@@ -7,7 +7,7 @@ use crate::markdown_elements::{
 use gpui::{
     div, img, px, rems, AbsoluteLength, AnyElement, ClipboardItem, DefiniteLength, Div, Element,
     ElementId, HighlightStyle, Hsla, ImageSource, InteractiveText, IntoElement, Keystroke, Length,
-    Modifiers, ParentElement, Render, Resource, SharedString, Styled, StyledText, TextStyle, Model,
+    Model, Modifiers, ParentElement, Render, Resource, SharedString, Styled, StyledText, TextStyle,
     WeakModel, WindowContext,
 };
 use settings::Settings;

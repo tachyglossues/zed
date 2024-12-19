@@ -1,6 +1,6 @@
 use editor::Editor;
 use gpui::{
-    div, white, IntoElement, KeyBinding, ParentElement, Render, Styled, Model, ViewContext,
+    div, white, IntoElement, KeyBinding, Model, ParentElement, Render, Styled, ViewContext,
     VisualContext, WindowContext,
 };
 

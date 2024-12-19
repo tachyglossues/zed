@@ -4,8 +4,8 @@ pub use active_toolchain::ActiveToolchain;
 use editor::Editor;
 use fuzzy::{match_strings, StringMatch, StringMatchCandidate};
 use gpui::{
-    actions, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView, Model,
-    ParentElement, Render, Styled, Task, Model, ViewContext, VisualContext, WeakModel,
+    actions, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView, Model, Model,
+    ParentElement, Render, Styled, Task, ViewContext, VisualContext, WeakModel,
 };
 use language::{LanguageName, Toolchain, ToolchainList};
 use picker::{Picker, PickerDelegate};

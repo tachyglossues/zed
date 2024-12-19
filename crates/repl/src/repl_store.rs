@@ -4,7 +4,7 @@ use anyhow::Result;
 use collections::HashMap;
 use command_palette_hooks::CommandPaletteFilter;
 use gpui::{
-    prelude::*, AppContext, EntityId, Global, Model, ModelContext, Subscription, Task, Model,
+    prelude::*, AppContext, EntityId, Global, Model, Model, ModelContext, Subscription, Task,
 };
 use jupyter_websocket_client::RemoteServer;
 use language::Language;

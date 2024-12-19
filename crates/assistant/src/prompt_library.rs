@@ -11,8 +11,8 @@ use futures::{
 use fuzzy::StringMatchCandidate;
 use gpui::{
     actions, point, size, transparent_black, Action, AppContext, BackgroundExecutor, Bounds,
-    EventEmitter, Global, PromptLevel, ReadGlobal, Subscription, Task, TextStyle, TitlebarOptions,
-    UpdateGlobal, Model, WindowBounds, WindowHandle, WindowOptions,
+    EventEmitter, Global, Model, PromptLevel, ReadGlobal, Subscription, Task, TextStyle,
+    TitlebarOptions, UpdateGlobal, WindowBounds, WindowHandle, WindowOptions,
 };
 use heed::{
     types::{SerdeBincode, SerdeJson, Str},

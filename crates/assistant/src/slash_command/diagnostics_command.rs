@@ -4,7 +4,7 @@ use assistant_slash_command::{
     SlashCommandResult,
 };
 use fuzzy::{PathMatch, StringMatchCandidate};
-use gpui::{AppContext, Model, Task, Model, WeakModel};
+use gpui::{AppContext, Model, Model, Task, WeakModel};
 use language::{
     Anchor, BufferSnapshot, DiagnosticEntry, DiagnosticSeverity, LspAdapterDelegate,
     OffsetRangeExt, ToOffset,

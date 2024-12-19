@@ -5,8 +5,8 @@ use std::{cell::RefCell, rc::Rc};
 use gpui::{
     anchored, deferred, div, point, prelude::FluentBuilder, px, size, AnyElement, Bounds, Corner,
     DismissEvent, DispatchPhase, Element, ElementId, GlobalElementId, HitboxId, InteractiveElement,
-    IntoElement, LayoutId, Length, ManagedView, MouseDownEvent, ParentElement, Pixels, Point,
-    Style, Model, VisualContext, WindowContext,
+    IntoElement, LayoutId, Length, ManagedView, Model, MouseDownEvent, ParentElement, Pixels,
+    Point, Style, VisualContext, WindowContext,
 };
 
 use crate::prelude::*;

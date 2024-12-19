@@ -2,7 +2,7 @@ mod update_notification;
 
 use auto_update::AutoUpdater;
 use editor::{Editor, MultiBuffer};
-use gpui::{actions, prelude::*, AppContext, SharedString, Model, ViewContext};
+use gpui::{actions, prelude::*, AppContext, Model, SharedString, ViewContext};
 use http_client::HttpClient;
 use markdown_preview::markdown_preview_view::{MarkdownPreviewMode, MarkdownPreviewView};
 use release_channel::{AppVersion, ReleaseChannel};

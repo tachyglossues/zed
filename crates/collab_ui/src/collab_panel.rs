@@ -14,8 +14,8 @@ use gpui::{
     actions, anchored, canvas, deferred, div, fill, list, point, prelude::*, px, AnyElement,
     AppContext, AsyncWindowContext, Bounds, ClickEvent, ClipboardItem, DismissEvent, Div,
     EventEmitter, FocusHandle, FocusableView, FontStyle, InteractiveElement, IntoElement,
-    ListOffset, ListState, Model, MouseDownEvent, ParentElement, Pixels, Point, PromptLevel,
-    Render, SharedString, Styled, Subscription, Task, TextStyle, Model, ViewContext, VisualContext,
+    ListOffset, ListState, Model, Model, MouseDownEvent, ParentElement, Pixels, Point, PromptLevel,
+    Render, SharedString, Styled, Subscription, Task, TextStyle, ViewContext, VisualContext,
     WeakModel,
 };
 use menu::{Cancel, Confirm, SecondaryConfirm, SelectNext, SelectPrev};

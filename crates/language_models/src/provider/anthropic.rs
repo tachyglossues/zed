@@ -6,8 +6,8 @@ use editor::{Editor, EditorElement, EditorStyle};
 use futures::Stream;
 use futures::{future::BoxFuture, stream::BoxStream, FutureExt, StreamExt, TryStreamExt as _};
 use gpui::{
-    AnyView, AppContext, AsyncAppContext, FontStyle, ModelContext, Subscription, Task, TextStyle,
-    Model, WhiteSpace,
+    AnyView, AppContext, AsyncAppContext, FontStyle, Model, ModelContext, Subscription, Task,
+    TextStyle, WhiteSpace,
 };
 use http_client::HttpClient;
 use language_model::{

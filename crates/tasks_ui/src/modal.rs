@@ -4,8 +4,8 @@ use crate::active_item_selection_properties;
 use fuzzy::{StringMatch, StringMatchCandidate};
 use gpui::{
     rems, Action, AnyElement, AppContext, DismissEvent, EventEmitter, FocusableView,
-    InteractiveElement, Model, ParentElement, Render, SharedString, Styled, Subscription, Task,
-    Model, ViewContext, VisualContext, WeakModel,
+    InteractiveElement, Model, Model, ParentElement, Render, SharedString, Styled, Subscription,
+    Task, ViewContext, VisualContext, WeakModel,
 };
 use picker::{highlighted_match_with_paths::HighlightedText, Picker, PickerDelegate};
 use project::{task_store::TaskStore, TaskSourceKind};
@@ -1048,7 +1048,10 @@ mod tests {
         })
     }
 
-    fn query(spawn_tasks: &Model<Picker<TasksModalDelegate>>, cx: &mut VisualTestContext) -> String {
+    fn query(
+        spawn_tasks: &Model<Picker<TasksModalDelegate>>,
+        cx: &mut VisualTestContext,
+    ) -> String {
         spawn_tasks.update(cx, |spawn_tasks, cx| spawn_tasks.query(cx))
     }
 

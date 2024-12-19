@@ -7,9 +7,8 @@ use call::participant::{Frame, RemoteVideoTrack};
 use client::{proto::PeerId, User};
 use futures::StreamExt;
 use gpui::{
-    div, surface, AppContext, EventEmitter, FocusHandle, FocusableView, InteractiveElement,
-    ParentElement, Render, SharedString, Styled, Task, Model, ViewContext, VisualContext,
-    WindowContext,
+    div, surface, AppContext, EventEmitter, FocusHandle, FocusableView, InteractiveElement, Model,
+    ParentElement, Render, SharedString, Styled, Task, ViewContext, VisualContext, WindowContext,
 };
 use std::sync::{Arc, Weak};
 use ui::{prelude::*, Icon, IconName};

@@ -1,7 +1,7 @@
 use crate::ItemHandle;
 use gpui::{
-    AnyView, Entity, EntityId, EventEmitter, ParentElement as _, Render, Styled, Model, ViewContext,
-    WindowContext,
+    AnyView, Entity, EntityId, EventEmitter, Model, ParentElement as _, Render, Styled,
+    ViewContext, WindowContext,
 };
 use ui::prelude::*;
 use ui::{h_flex, v_flex};

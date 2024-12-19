@@ -4,7 +4,7 @@ use cursor_position::LineIndicatorFormat;
 use editor::{scroll::Autoscroll, Editor};
 use gpui::{
     div, prelude::*, AnyWindowHandle, AppContext, DismissEvent, EventEmitter, FocusHandle,
-    FocusableView, Render, SharedString, Styled, Subscription, Model, ViewContext, VisualContext,
+    FocusableView, Model, Render, SharedString, Styled, Subscription, ViewContext, VisualContext,
 };
 use settings::Settings;
 use text::{Bias, Point};

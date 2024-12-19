@@ -12,7 +12,7 @@ use editor::{
 };
 use gpui::{
     actions, AnyView, AppContext, ClipboardItem, Entity as _, EventEmitter, FocusableView, Model,
-    Pixels, Point, Render, Subscription, Task, Model, ViewContext, VisualContext as _, WeakModel,
+    Model, Pixels, Point, Render, Subscription, Task, ViewContext, VisualContext as _, WeakModel,
     WindowContext,
 };
 use project::Project;

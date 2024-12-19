@@ -1,5 +1,5 @@
 use futures::{channel::mpsc, SinkExt as _};
-use gpui::{Task, Model, WindowContext};
+use gpui::{Model, Task, WindowContext};
 use http_client::{AsyncBody, HttpClient, Request};
 use jupyter_protocol::{ExecutionState, JupyterKernelspec, JupyterMessage, KernelInfoReply};
 

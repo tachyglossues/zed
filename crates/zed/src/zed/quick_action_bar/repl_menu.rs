@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use gpui::ElementId;
-use gpui::{percentage, Animation, AnimationExt, AnyElement, Transformation, Model};
+use gpui::{percentage, Animation, AnimationExt, AnyElement, Model, Transformation};
 use picker::Picker;
 use repl::{
     components::{KernelPickerDelegate, KernelSelector},

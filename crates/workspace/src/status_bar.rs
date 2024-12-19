@@ -1,6 +1,6 @@
 use crate::{ItemHandle, Pane};
 use gpui::{
-    AnyView, Decorations, IntoElement, ParentElement, Render, Styled, Subscription, Model,
+    AnyView, Decorations, IntoElement, Model, ParentElement, Render, Styled, Subscription,
     ViewContext, WindowContext,
 };
 use std::any::TypeId;

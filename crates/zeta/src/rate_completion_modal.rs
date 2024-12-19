@@ -2,7 +2,7 @@ use crate::{InlineCompletion, InlineCompletionRating, Zeta};
 use editor::Editor;
 use gpui::{
     actions, prelude::*, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView,
-    HighlightStyle, Model, StyledText, TextStyle, Model, ViewContext,
+    HighlightStyle, Model, Model, StyledText, TextStyle, ViewContext,
 };
 use language::{language_settings, OffsetRangeExt};
 use settings::Settings;

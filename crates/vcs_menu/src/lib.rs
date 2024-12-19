@@ -3,8 +3,8 @@ use fuzzy::{StringMatch, StringMatchCandidate};
 use git::repository::Branch;
 use gpui::{
     rems, AnyElement, AppContext, AsyncAppContext, DismissEvent, EventEmitter, FocusHandle,
-    FocusableView, InteractiveElement, IntoElement, ParentElement, Render, SharedString, Styled,
-    Subscription, Task, Model, ViewContext, VisualContext, WeakModel, WindowContext,
+    FocusableView, InteractiveElement, IntoElement, Model, ParentElement, Render, SharedString,
+    Styled, Subscription, Task, ViewContext, VisualContext, WeakModel, WindowContext,
 };
 use picker::{Picker, PickerDelegate};
 use project::ProjectPath;

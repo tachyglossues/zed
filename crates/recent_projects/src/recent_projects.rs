@@ -6,8 +6,8 @@ pub use ssh_connections::{is_connecting_over_ssh, open_ssh_project};
 use disconnected_overlay::DisconnectedOverlay;
 use fuzzy::{StringMatch, StringMatchCandidate};
 use gpui::{
-    Action, AnyElement, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView,
-    Subscription, Task, Model, ViewContext, WeakModel,
+    Action, AnyElement, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView, Model,
+    Subscription, Task, ViewContext, WeakModel,
 };
 use itertools::Itertools;
 use ordered_float::OrderedFloat;

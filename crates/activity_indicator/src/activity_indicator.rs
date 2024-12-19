@@ -4,8 +4,8 @@ use extension_host::ExtensionStore;
 use futures::StreamExt;
 use gpui::{
     actions, percentage, Animation, AnimationExt as _, AppContext, CursorStyle, EventEmitter,
-    InteractiveElement as _, Model, ParentElement as _, Render, SharedString,
-    StatefulInteractiveElement, Styled, Transformation, Model, ViewContext, VisualContext as _,
+    InteractiveElement as _, Model, Model, ParentElement as _, Render, SharedString,
+    StatefulInteractiveElement, Styled, Transformation, ViewContext, VisualContext as _,
 };
 use language::{LanguageRegistry, LanguageServerBinaryStatus, LanguageServerId};
 use lsp::LanguageServerName;

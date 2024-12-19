@@ -2,7 +2,7 @@
 use std::{cmp::Ordering, ops::Range, rc::Rc};
 
 use gpui::{
-    fill, point, size, AnyElement, AppContext, Bounds, Hsla, Point, UniformListDecoration, Model,
+    fill, point, size, AnyElement, AppContext, Bounds, Hsla, Model, Point, UniformListDecoration,
 };
 use smallvec::SmallVec;
 

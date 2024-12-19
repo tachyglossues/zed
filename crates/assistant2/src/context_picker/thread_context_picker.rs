@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use fuzzy::StringMatchCandidate;
-use gpui::{AppContext, DismissEvent, FocusHandle, FocusableView, Task, Model, WeakModel, WeakModel};
+use gpui::{
+    AppContext, DismissEvent, FocusHandle, FocusableView, Model, Task, WeakModel, WeakModel,
+};
 use picker::{Picker, PickerDelegate};
 use ui::{prelude::*, ListItem};
 

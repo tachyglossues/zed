@@ -6,7 +6,7 @@ use collections::BTreeMap;
 use futures::Future;
 use git::diff::DiffHunkStatus;
 use gpui::{
-    prelude::*, AnyWindowHandle, AppContext, Keystroke, ModelContext, Pixels, Point, Model,
+    prelude::*, AnyWindowHandle, AppContext, Keystroke, Model, ModelContext, Pixels, Point,
     ViewContext, VisualTestContext, WindowHandle,
 };
 use itertools::Itertools;

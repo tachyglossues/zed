@@ -1,5 +1,5 @@
 use editor::{Editor, ToPoint};
-use gpui::{AppContext, FocusHandle, FocusableView, Subscription, Task, Model, WeakModel};
+use gpui::{AppContext, FocusHandle, FocusableView, Model, Subscription, Task, WeakModel};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use settings::{Settings, SettingsSources};

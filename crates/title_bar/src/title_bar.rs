@@ -14,8 +14,8 @@ use client::{Client, UserStore};
 use feature_flags::{FeatureFlagAppExt, ZedPro};
 use gpui::{
     actions, div, px, Action, AnyElement, AppContext, Decorations, Element, InteractiveElement,
-    Interactivity, IntoElement, Model, MouseButton, ParentElement, Render, Stateful,
-    StatefulInteractiveElement, Styled, Subscription, Model, ViewContext, VisualContext, WeakModel,
+    Interactivity, IntoElement, Model, Model, MouseButton, ParentElement, Render, Stateful,
+    StatefulInteractiveElement, Styled, Subscription, ViewContext, VisualContext, WeakModel,
 };
 use project::{Project, RepositoryEntry};
 use rpc::proto;

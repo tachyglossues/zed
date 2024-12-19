@@ -1,4 +1,4 @@
-use gpui::{div, prelude::*, px, Render, SharedString, Styled, Model, WindowContext};
+use gpui::{div, prelude::*, px, Model, Render, SharedString, Styled, WindowContext};
 use ui::prelude::*;
 use ui::Tooltip;
 

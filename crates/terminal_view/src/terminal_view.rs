@@ -7,9 +7,9 @@ use editor::{actions::SelectAll, scroll::Autoscroll, Editor};
 use futures::{stream::FuturesUnordered, StreamExt};
 use gpui::{
     anchored, deferred, div, impl_actions, AnyElement, AppContext, DismissEvent, EventEmitter,
-    FocusHandle, FocusableView, KeyContext, KeyDownEvent, Keystroke, Model, MouseButton,
-    MouseDownEvent, Pixels, Render, ScrollWheelEvent, Styled, Subscription, Task, Model,
-    VisualContext, WeakModel, WeakModel,
+    FocusHandle, FocusableView, KeyContext, KeyDownEvent, Keystroke, Model, Model, MouseButton,
+    MouseDownEvent, Pixels, Render, ScrollWheelEvent, Styled, Subscription, Task, VisualContext,
+    WeakModel, WeakModel,
 };
 use language::Bias;
 use persistence::TERMINAL_DB;

@@ -80,11 +80,11 @@ use gpui::{
     div, impl_actions, point, prelude::*, px, relative, size, Action, AnyElement, AppContext,
     AsyncWindowContext, AvailableSpace, Bounds, ClipboardEntry, ClipboardItem, Context,
     DispatchPhase, ElementId, EventEmitter, FocusHandle, FocusOutEvent, FocusableView, FontId,
-    FontWeight, Global, HighlightStyle, Hsla, InteractiveText, KeyContext, Model, ModelContext,
-    MouseButton, PaintQuad, ParentElement, Pixels, Render, SharedString, Size, Styled, StyledText,
-    Subscription, Task, TextStyle, TextStyleRefinement, UTF16Selection, UnderlineStyle,
-    UniformListScrollHandle, Model, ViewContext, ViewInputHandler, VisualContext, WeakFocusHandle,
-    WeakModel, WindowContext,
+    FontWeight, Global, HighlightStyle, Hsla, InteractiveText, KeyContext, Model, Model,
+    ModelContext, MouseButton, PaintQuad, ParentElement, Pixels, Render, SharedString, Size,
+    Styled, StyledText, Subscription, Task, TextStyle, TextStyleRefinement, UTF16Selection,
+    UnderlineStyle, UniformListScrollHandle, ViewContext, ViewInputHandler, VisualContext,
+    WeakFocusHandle, WeakModel, WindowContext,
 };
 use highlight_matching_bracket::refresh_matching_bracket_highlights;
 use hover_popover::{hide_hover, HoverState};
@@ -679,7 +679,11 @@ pub struct Editor {
     custom_context_menu: Option<
         Box<
             dyn 'static
-                + Fn(&mut Self, DisplayPoint, &mut ViewContext<Self>) -> Option<Model<ui::ContextMenu>>,
+                + Fn(
+                    &mut Self,
+                    DisplayPoint,
+                    &mut ViewContext<Self>,
+                ) -> Option<Model<ui::ContextMenu>>,
         >,
     >,
     last_bounds: Option<Bounds<Pixels>>,

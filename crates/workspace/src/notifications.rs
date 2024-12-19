@@ -2,7 +2,7 @@ use crate::{Toast, Workspace};
 use collections::HashMap;
 use gpui::{
     svg, AnyView, AppContext, AsyncWindowContext, ClipboardItem, DismissEvent, Entity, EntityId,
-    EventEmitter, Global, PromptLevel, Render, ScrollHandle, Task, Model, ViewContext,
+    EventEmitter, Global, Model, PromptLevel, Render, ScrollHandle, Task, ViewContext,
     VisualContext, WindowContext,
 };
 use language::DiagnosticSeverity;

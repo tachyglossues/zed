@@ -3,8 +3,8 @@ use collections::BTreeMap;
 use editor::{Editor, EditorElement, EditorStyle};
 use futures::{future::BoxFuture, FutureExt, StreamExt};
 use gpui::{
-    AnyView, AppContext, AsyncAppContext, FontStyle, ModelContext, Subscription, Task, TextStyle,
-    Model, WhiteSpace,
+    AnyView, AppContext, AsyncAppContext, FontStyle, Model, ModelContext, Subscription, Task,
+    TextStyle, WhiteSpace,
 };
 use http_client::HttpClient;
 use language_model::{

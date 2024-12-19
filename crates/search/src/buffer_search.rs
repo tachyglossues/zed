@@ -14,8 +14,8 @@ use editor::{
 use futures::channel::oneshot;
 use gpui::{
     actions, div, impl_actions, Action, AppContext, ClickEvent, EventEmitter, FocusHandle,
-    FocusableView, Hsla, InteractiveElement as _, IntoElement, KeyContext, ParentElement as _,
-    Render, ScrollHandle, Styled, Subscription, Task, TextStyle, Model, ViewContext,
+    FocusableView, Hsla, InteractiveElement as _, IntoElement, KeyContext, Model,
+    ParentElement as _, Render, ScrollHandle, Styled, Subscription, Task, TextStyle, ViewContext,
     VisualContext as _, WindowContext,
 };
 use project::{
@@ -1312,7 +1312,11 @@ mod tests {
 
     fn init_test(
         cx: &mut TestAppContext,
-    ) -> (Model<Editor>, Model<BufferSearchBar>, &mut VisualTestContext) {
+    ) -> (
+        Model<Editor>,
+        Model<BufferSearchBar>,
+        &mut VisualTestContext,
+    ) {
         init_globals(cx);
         let buffer = cx.new_model(|cx| {
             Buffer::local(

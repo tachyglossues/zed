@@ -22,9 +22,9 @@ use editor::{scroll::Autoscroll, Editor, MultiBuffer};
 use feature_flags::FeatureFlagAppExt;
 use futures::{channel::mpsc, select_biased, StreamExt};
 use gpui::{
-    actions, point, px, AppContext, AsyncAppContext, Context, FocusableView, MenuItem,
-    PathPromptOptions, PromptLevel, ReadGlobal, Task, TitlebarOptions, Model, ViewContext,
-    VisualContext, WindowKind, WindowOptions,
+    actions, point, px, AppContext, AsyncAppContext, Context, FocusableView, MenuItem, Model,
+    PathPromptOptions, PromptLevel, ReadGlobal, Task, TitlebarOptions, ViewContext, VisualContext,
+    WindowKind, WindowOptions,
 };
 pub use open_listener::*;
 use outline_panel::OutlinePanel;

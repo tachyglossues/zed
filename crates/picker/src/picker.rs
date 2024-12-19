@@ -3,7 +3,7 @@ use editor::{scroll::Autoscroll, Editor};
 use gpui::{
     actions, div, impl_actions, list, prelude::*, uniform_list, AnyElement, AppContext, ClickEvent,
     DismissEvent, EventEmitter, FocusHandle, FocusableView, Length, ListSizingBehavior, ListState,
-    MouseButton, MouseUpEvent, Render, ScrollStrategy, Task, UniformListScrollHandle, Model,
+    Model, MouseButton, MouseUpEvent, Render, ScrollStrategy, Task, UniformListScrollHandle,
     ViewContext, WindowContext,
 };
 use head::Head;

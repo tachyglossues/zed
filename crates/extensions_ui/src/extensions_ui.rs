@@ -14,8 +14,8 @@ use extension_host::{ExtensionManifest, ExtensionOperation, ExtensionStore};
 use fuzzy::{match_strings, StringMatchCandidate};
 use gpui::{
     actions, uniform_list, Action, AppContext, ClipboardItem, EventEmitter, Flatten, FocusableView,
-    InteractiveElement, KeyContext, ParentElement, Render, Styled, Task, TextStyle,
-    UniformListScrollHandle, Model, ViewContext, VisualContext, WeakModel, WindowContext,
+    InteractiveElement, KeyContext, Model, ParentElement, Render, Styled, Task, TextStyle,
+    UniformListScrollHandle, ViewContext, VisualContext, WeakModel, WindowContext,
 };
 use num_format::{Locale, ToFormattedString};
 use project::DirectoryLister;
@@ -802,7 +802,11 @@ impl ExtensionsPage {
         )
     }
 
-    fn render_text_input(&self, editor: &Model<Editor>, cx: &ViewContext<Self>) -> impl IntoElement {
+    fn render_text_input(
+        &self,
+        editor: &Model<Editor>,
+        cx: &ViewContext<Self>,
+    ) -> impl IntoElement {
         let settings = ThemeSettings::get_global(cx);
         let text_style = TextStyle {
             color: if editor.read(cx).read_only(cx) {

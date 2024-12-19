@@ -12,9 +12,9 @@ use futures::StreamExt;
 use gpui::{
     actions, div, Action, AnyElement, AnyView, AppContext, Axis, Context as _, EntityId,
     EventEmitter, FocusHandle, FocusableView, Global, Hsla, InteractiveElement, IntoElement,
-    KeyContext, Model, ModelContext, ParentElement, Point, Render, SharedString, Styled,
-    Subscription, Task, TextStyle, UpdateGlobal, Model, ViewContext, VisualContext, WeakModel,
-    WeakModel, WindowContext,
+    KeyContext, Model, Model, ModelContext, ParentElement, Point, Render, SharedString, Styled,
+    Subscription, Task, TextStyle, UpdateGlobal, ViewContext, VisualContext, WeakModel, WeakModel,
+    WindowContext,
 };
 use language::Buffer;
 use menu::Confirm;
@@ -1551,7 +1551,11 @@ impl ProjectSearchBar {
         }
     }
 
-    fn render_text_input(&self, editor: &Model<Editor>, cx: &ViewContext<Self>) -> impl IntoElement {
+    fn render_text_input(
+        &self,
+        editor: &Model<Editor>,
+        cx: &ViewContext<Self>,
+    ) -> impl IntoElement {
         let settings = ThemeSettings::get_global(cx);
         let text_style = TextStyle {
             color: if editor.read(cx).read_only(cx) {

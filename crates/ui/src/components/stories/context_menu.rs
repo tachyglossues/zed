@@ -1,4 +1,4 @@
-use gpui::{actions, Corner, Render, Model};
+use gpui::{actions, Corner, Model, Render};
 use story::Story;
 
 use crate::prelude::*;

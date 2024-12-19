@@ -9,8 +9,8 @@ use editor::{actions, Editor};
 use gpui::{
     actions, div, list, prelude::*, px, Action, AppContext, AsyncWindowContext, ClipboardItem,
     CursorStyle, DismissEvent, ElementId, EventEmitter, FocusHandle, FocusableView, FontWeight,
-    HighlightStyle, ListOffset, ListScrollEvent, ListState, Model, Render, Stateful, Subscription,
-    Task, Model, ViewContext, VisualContext, WeakModel,
+    HighlightStyle, ListOffset, ListScrollEvent, ListState, Model, Model, Render, Stateful,
+    Subscription, Task, ViewContext, VisualContext, WeakModel,
 };
 use language::LanguageRegistry;
 use menu::Confirm;

@@ -1,4 +1,4 @@
-use gpui::{AnyView, DismissEvent, FocusHandle, ManagedView, Subscription, Model};
+use gpui::{AnyView, DismissEvent, FocusHandle, ManagedView, Model, Subscription};
 use ui::prelude::*;
 
 pub enum DismissDecision {

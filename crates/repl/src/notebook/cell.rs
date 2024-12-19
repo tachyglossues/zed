@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use editor::{Editor, EditorMode, MultiBuffer};
 use futures::future::Shared;
-use gpui::{prelude::*, AppContext, Hsla, Task, TextStyleRefinement, Model};
+use gpui::{prelude::*, AppContext, Hsla, Model, Task, TextStyleRefinement};
 use language::{Buffer, Language, LanguageRegistry};
 use markdown_preview::{markdown_parser::parse_markdown, markdown_renderer::render_markdown_block};
 use nbformat::v4::{CellId, CellMetadata, CellType};

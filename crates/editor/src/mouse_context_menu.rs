@@ -6,7 +6,7 @@ use crate::{
     SelectMode, ToDisplayPoint, ToggleCodeActions,
 };
 use gpui::prelude::FluentBuilder;
-use gpui::{DismissEvent, Pixels, Point, Subscription, Model, ViewContext};
+use gpui::{DismissEvent, Model, Pixels, Point, Subscription, ViewContext};
 use std::ops::Range;
 use text::PointUtf16;
 use workspace::OpenInTerminal;

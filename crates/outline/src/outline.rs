@@ -10,7 +10,7 @@ use editor::{
 use fuzzy::StringMatch;
 use gpui::{
     div, rems, AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView, HighlightStyle,
-    ParentElement, Point, Render, Styled, StyledText, Task, TextStyle, Model, ViewContext,
+    Model, ParentElement, Point, Render, Styled, StyledText, Task, TextStyle, ViewContext,
     VisualContext, WeakModel, WindowContext,
 };
 use language::{Outline, OutlineItem};

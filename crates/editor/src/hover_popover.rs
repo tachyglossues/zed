@@ -7,8 +7,8 @@ use crate::{
 };
 use gpui::{
     div, px, AnyElement, AsyncWindowContext, FontWeight, Hsla, InteractiveElement, IntoElement,
-    MouseButton, ParentElement, Pixels, ScrollHandle, Size, Stateful, StatefulInteractiveElement,
-    StyleRefinement, Styled, Task, TextStyleRefinement, Model, ViewContext,
+    Model, MouseButton, ParentElement, Pixels, ScrollHandle, Size, Stateful,
+    StatefulInteractiveElement, StyleRefinement, Styled, Task, TextStyleRefinement, ViewContext,
 };
 use itertools::Itertools;
 use language::{Diagnostic, DiagnosticEntry, Language, LanguageRegistry};

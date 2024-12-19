@@ -1,7 +1,7 @@
 use client::{ContactRequestStatus, User, UserStore};
 use gpui::{
-    AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView, Model, ParentElement as _,
-    Render, Styled, Task, Model, ViewContext, VisualContext, WeakModel,
+    AppContext, DismissEvent, EventEmitter, FocusHandle, FocusableView, Model, Model,
+    ParentElement as _, Render, Styled, Task, ViewContext, VisualContext, WeakModel,
 };
 use picker::{Picker, PickerDelegate};
 use std::sync::Arc;

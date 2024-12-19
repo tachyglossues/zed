@@ -1,6 +1,6 @@
 use gpui::{
-    colors, div, prelude::*, DefaultColor, DefaultThemeAppearance, Hsla, Render, Model, ViewContext,
-    WindowContext,
+    colors, div, prelude::*, DefaultColor, DefaultThemeAppearance, Hsla, Model, Render,
+    ViewContext, WindowContext,
 };
 use story::Story;
 use strum::IntoEnumIterator;

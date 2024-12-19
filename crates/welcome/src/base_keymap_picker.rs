@@ -1,7 +1,7 @@
 use super::base_keymap_setting::BaseKeymap;
 use fuzzy::{match_strings, StringMatch, StringMatchCandidate};
 use gpui::{
-    actions, AppContext, DismissEvent, EventEmitter, FocusableView, Render, Task, Model,
+    actions, AppContext, DismissEvent, EventEmitter, FocusableView, Model, Render, Task,
     ViewContext, VisualContext, WeakModel,
 };
 use picker::{Picker, PickerDelegate};
