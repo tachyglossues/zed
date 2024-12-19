@@ -13,15 +13,15 @@ use std::{
 
 /// The app context, with specialized behavior for the given model.
 #[derive(Deref, DerefMut)]
-pub struct ModelContext<'a, 'b, T> {
+pub struct ModelContext<'a, T> {
     #[deref]
     #[deref_mut]
     pub(crate) app: &'a mut AppContext,
-    pub(crate) entity: &'b Model<T>,
+    pub(crate) entity: &'a Model<T>,
 }
 
-impl<'a, 'b, T: 'static> ModelContext<'a, 'b, T> {
-    pub(crate) fn new(app: &'a mut AppContext, model_state: &'b Model<T>) -> Self {
+impl<'a, T: 'static> ModelContext<'a, T> {
+    pub(crate) fn new(app: &'a mut AppContext, model_state: &'a Model<T>) -> Self {
         Self {
             app,
             entity: model_state,
@@ -48,7 +48,7 @@ impl<'a, 'b, T: 'static> ModelContext<'a, 'b, T> {
     pub fn observe<W, E>(
         &mut self,
         entity: &E,
-        mut on_notify: impl FnMut(&mut T, E, &mut ModelContext<'_, '_, T>) + 'static,
+        mut on_notify: impl FnMut(&mut T, E, &mut ModelContext<'_, T>) + 'static,
     ) -> Subscription
     where
         T: 'static,
@@ -70,7 +70,7 @@ impl<'a, 'b, T: 'static> ModelContext<'a, 'b, T> {
     pub fn subscribe<T2, E, Evt>(
         &mut self,
         entity: &E,
-        mut on_event: impl FnMut(&mut T, E, &Evt, &mut ModelContext<'_, '_, T>) + 'static,
+        mut on_event: impl FnMut(&mut T, E, &Evt, &mut ModelContext<'_, T>) + 'static,
     ) -> Subscription
     where
         T: 'static,
@@ -112,7 +112,7 @@ impl<'a, 'b, T: 'static> ModelContext<'a, 'b, T> {
     pub fn observe_release<T2, E>(
         &self,
         entity: &E,
-        on_release: impl FnOnce(&mut T, &mut T2, &mut ModelContext<'_, '_, T>) + 'static,
+        on_release: impl FnOnce(&mut T, &mut T2, &mut ModelContext<'_, T>) + 'static,
     ) -> Subscription
     where
         T: Any,
@@ -137,7 +137,7 @@ impl<'a, 'b, T: 'static> ModelContext<'a, 'b, T> {
     /// Register a callback to for updates to the given global
     pub fn observe_global<G: 'static>(
         &mut self,
-        mut f: impl FnMut(&mut T, &mut ModelContext<'_, '_, T>) + 'static,
+        mut f: impl FnMut(&mut T, &mut ModelContext<'_, T>) + 'static,
     ) -> Subscription
     where
         T: 'static,
@@ -210,7 +210,7 @@ impl<'a, 'b, T: 'static> ModelContext<'a, 'b, T> {
     }
 }
 
-impl<'a, 'b, T> ModelContext<'a, 'b, T> {
+impl<'a, 'b, T> ModelContext<'a, T> {
     /// Emit an event of the specified type, which can be handled by other entities that have subscribed via `subscribe` methods on their respective contexts.
     pub fn emit<Evt>(&mut self, event: Evt)
     where
@@ -225,13 +225,13 @@ impl<'a, 'b, T> ModelContext<'a, 'b, T> {
     }
 }
 
-impl<'a, 'b, T> Context for ModelContext<'a, 'b, T> {
+impl<'a, T> Context for ModelContext<'a, T> {
     type Result<U> = U;
-    type EntityContext<'c, 'd, U: 'static> = ModelContext<'c, 'd, U>;
+    type EntityContext<'b, U: 'static> = ModelContext<'b, U>;
 
     fn new_model<U: 'static>(
         &mut self,
-        build_model: impl FnOnce(&mut Self::EntityContext<'_, '_, U>) -> U,
+        build_model: impl for<'f> FnOnce(&mut ModelContext<'f, U>) -> U,
     ) -> Model<U> {
         self.app.new_model(build_model)
     }
@@ -243,7 +243,7 @@ impl<'a, 'b, T> Context for ModelContext<'a, 'b, T> {
     fn insert_model<U: 'static>(
         &mut self,
         reservation: Reservation<U>,
-        build_model: impl FnOnce(&mut ModelContext<'_, '_, U>) -> U,
+        build_model: impl for<'f> FnOnce(&mut ModelContext<'f, U>) -> U,
     ) -> Self::Result<Model<U>> {
         self.app.insert_model(reservation, build_model)
     }
@@ -251,7 +251,7 @@ impl<'a, 'b, T> Context for ModelContext<'a, 'b, T> {
     fn update_model<U: 'static, R>(
         &mut self,
         handle: &Model<U>,
-        update: impl FnOnce(&mut U, &mut ModelContext<'_, '_, U>) -> R,
+        update: impl for<'f> FnOnce(&mut U, &mut ModelContext<'f, U>) -> R,
     ) -> R {
         self.app.update_model(handle, update)
     }
@@ -267,10 +267,11 @@ impl<'a, 'b, T> Context for ModelContext<'a, 'b, T> {
         self.app.read_model(handle, read)
     }
 
-    fn update_window<R, F>(&mut self, window: AnyWindowHandle, update: F) -> Result<R>
-    where
-        F: FnOnce(AnyView, &mut WindowContext<'_>) -> R,
-    {
+    fn update_window<R>(
+        &mut self,
+        window: AnyWindowHandle,
+        update: impl for<'f> FnOnce(AnyView, &mut WindowContext<'f>) -> R,
+    ) -> Result<R> {
         self.app.update_window(window, update)
     }
 
@@ -286,13 +287,13 @@ impl<'a, 'b, T> Context for ModelContext<'a, 'b, T> {
     }
 }
 
-impl<T> Borrow<AppContext> for ModelContext<'_, '_, T> {
+impl<T> Borrow<AppContext> for ModelContext<'_, T> {
     fn borrow(&self) -> &AppContext {
         self.app
     }
 }
 
-impl<T> BorrowMut<AppContext> for ModelContext<'_, '_, T> {
+impl<T> BorrowMut<AppContext> for ModelContext<'_, T> {
     fn borrow_mut(&mut self) -> &mut AppContext {
         self.app
     }

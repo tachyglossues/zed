@@ -18,10 +18,10 @@
 use crate::{
     point, px, size, Action, AnyDrag, AnyElement, AnyTooltip, AnyView, AppContext, Bounds,
     ClickEvent, DispatchPhase, Element, ElementId, FocusHandle, Global, GlobalElementId, Hitbox,
-    HitboxId, IntoElement, IsZero, KeyContext, KeyDownEvent, KeyUpEvent, LayoutId,
+    HitboxId, IntoElement, IsZero, KeyContext, KeyDownEvent, KeyUpEvent, LayoutId, Model,
     ModifiersChangedEvent, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
     ParentElement, Pixels, Point, Render, ScrollWheelEvent, SharedString, Size, Style,
-    StyleRefinement, Styled, Task, TooltipId, Model, Visibility, WindowContext,
+    StyleRefinement, Styled, Task, TooltipId, Visibility, WindowContext,
 };
 use collections::HashMap;
 use refineable::Refineable;

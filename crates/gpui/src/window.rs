@@ -6575,11 +6575,11 @@ impl WindowContext<'_> {
 
 impl Context for WindowContext<'_> {
     type Result<T> = T;
-    type EntityContext<'a, 'b, T: 'static> = ViewContext<'a, 'b, T>;
+    type EntityContext<'f, T: 'static> = ViewContext<'f, T>;
 
     fn new_model<T>(
         &mut self,
-        build_model: impl FnOnce(&mut ViewContext<'_, '_, T>) -> T,
+        build_model: impl for<'f> FnOnce(&mut ViewContext<'f, T>) -> T,
     ) -> Model<T>
     where
         T: 'static,
@@ -6587,9 +6587,9 @@ impl Context for WindowContext<'_> {
         self.app.update(|cx| {
             let slot = cx.entities.reserve();
             let model = slot.clone();
-            let entity = (|cx| build_model(&mut ViewContext::new(cx, self.window)))(
-                &mut ModelContext::new(cx, &slot),
-            );
+            let mut model_cx = &mut ModelContext::new(cx, &slot);
+            let mut view_cx = &mut ViewContext::new(model_cx, self.window);
+            let entity = build_model(view_cx);
             cx.entities.insert(slot, entity);
 
             // Non-generic part to avoid leaking SubscriberSet to invokers of `new_view`.
@@ -6613,26 +6613,27 @@ impl Context for WindowContext<'_> {
     fn insert_model<T: 'static>(
         &mut self,
         reservation: crate::Reservation<T>,
-        build_model: impl FnOnce(&mut ViewContext<'_, '_, T>) -> T,
+        build_model: impl for<'f> FnOnce(&mut ViewContext<'f, T>) -> T,
     ) -> Self::Result<Model<T>> {
-        self.app
-            .insert_model(reservation, |cx: &mut ModelContext<'_, T>| {
-                // let window = &mut self.window;
-                ViewContext::new(cx, &mut self.window);
-                // build_model(&mut cx)
-                todo!()
-            })
+        todo!()
+        /*
+        let mut window = &mut self.window;
+        self.app.insert_model(reservation, |cx| {
+            let mut cx = ViewContext::new(cx, window);
+            build_model(&mut cx)
+        })
+        */
     }
 
     fn update_model<T: 'static, R>(
         &mut self,
         model: &Model<T>,
-        update: impl FnOnce(&mut T, &mut ViewContext<'_, '_, T>) -> R,
+        update: impl for<'f> FnOnce(&mut T, &mut ViewContext<'f, T>) -> R,
     ) -> R {
         let mut entity = self.entities.lease(model);
         let result = update(
             &mut *entity,
-            &mut ViewContext::new(self.cx, self.window, model),
+            &mut ViewContext::new(&mut ModelContext::new(self.app, model), self.window),
         );
         self.entities.end_lease(entity);
         result
@@ -6647,19 +6648,23 @@ impl Context for WindowContext<'_> {
         T: 'static,
     {
         let entity = self.entities.read(handle);
-        read(entity, &*self.cx)
+        read(entity, &*self.app)
     }
 
-    fn update_window<T, F>(&mut self, window: AnyWindowHandle, update: F) -> Result<T>
-    where
-        F: FnOnce(AnyView, &mut WindowContext<'_>) -> T,
-    {
+    fn update_window<T>(
+        &mut self,
+        window: AnyWindowHandle,
+        update: impl for<'f> FnOnce(AnyView, &mut WindowContext<'f>) -> T,
+    ) -> Result<T> {
+        todo!();
+        /*
         if window == self.window.handle {
             let root_view = self.window.root_view.clone().unwrap();
             Ok(update(root_view, self))
         } else {
-            window.update(self.cx, update)
+            window.update(self.app, update)
         }
+        */
     }
 
     fn read_window<T, R>(
@@ -6688,11 +6693,13 @@ impl Context for WindowContext<'_> {
 impl VisualContext for WindowContext<'_> {
     fn new_view<V>(
         &mut self,
-        build_view_state: impl FnOnce(&mut ViewContext<'_, '_, '_, V>) -> V,
+        build_view_state: impl for<'f> FnOnce(&mut ViewContext<'f, V>) -> V,
     ) -> Self::Result<Model<V>>
     where
         V: 'static + Render,
     {
+        todo!();
+        /*
         let view = self
             .app
             .new_model(|cx| build_view_state(&mut ViewContext::new(cx, self.window)));
@@ -6708,16 +6715,18 @@ impl VisualContext for WindowContext<'_> {
         notify_observers(self, TypeId::of::<V>(), AnyView::from(view.clone()));
 
         view
+        */
     }
 
     /// Updates the given view. Prefer calling [`View::update`] instead, which calls this method.
     fn update_view<T: 'static, R>(
         &mut self,
         view: &Model<T>,
-        update: impl FnOnce(&mut T, &mut ViewContext<'_, '_, T>) -> R,
+        update: impl for<'f> FnOnce(&mut T, &mut ViewContext<'f, T>) -> R,
     ) -> Self::Result<R> {
         let mut lease = self.app.entities.lease(view);
-        let mut cx = ViewContext::new(&mut *self.cx, &mut *self.window, view);
+        let mut model_cx = ModelContext::new(&mut *self.app, view);
+        let mut cx = ViewContext::new(&mut model_cx, &mut *self.window);
         let result = update(&mut *lease, &mut cx);
         cx.app.entities.end_lease(lease);
         result
@@ -6725,7 +6734,7 @@ impl VisualContext for WindowContext<'_> {
 
     fn replace_root_view<V>(
         &mut self,
-        build_view: impl FnOnce(&mut ViewContext<'_, '_, '_, V>) -> V,
+        build_view: impl for<'f> FnOnce(&mut ViewContext<'f, V>) -> V,
     ) -> Self::Result<Model<V>>
     where
         V: 'static + Render,
@@ -6738,7 +6747,7 @@ impl VisualContext for WindowContext<'_> {
 
     fn focus_view<V: crate::FocusableView>(&mut self, view: &Model<V>) -> Self::Result<()> {
         self.update_view(view, |view, cx| {
-            view.focus_handle(cx).clone().focus(cx);
+            view.focus_handle(cx).clone().focus(cx.window_context());
         })
     }
 
@@ -6754,25 +6763,25 @@ impl<'a> std::ops::Deref for WindowContext<'a> {
     type Target = AppContext;
 
     fn deref(&self) -> &Self::Target {
-        self.cx
+        self.app
     }
 }
 
 impl<'a> std::ops::DerefMut for WindowContext<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.cx
+        self.app
     }
 }
 
 impl<'a> Borrow<AppContext> for WindowContext<'a> {
     fn borrow(&self) -> &AppContext {
-        self.cx
+        self.app
     }
 }
 
 impl<'a> BorrowMut<AppContext> for WindowContext<'a> {
     fn borrow_mut(&mut self) -> &mut AppContext {
-        self.cx
+        self.app
     }
 }
 
@@ -6817,37 +6826,40 @@ impl<T> BorrowWindow for T where T: BorrowMut<AppContext> + BorrowMut<Window> {}
 /// Allows you to interact with focus, emit events, etc.
 /// ViewContext also derefs to [`WindowContext`], giving you access to all of its methods as well.
 /// When you call [`View::update`], you're passed a `&mut V` and an `&mut ViewContext<V>`.
-pub struct ViewContext<'a, 'b, 'c, V> {
-    cx: &'a mut ModelContext<'a, 'b, V>,
-    window: &'c mut Window,
+#[derive(Deref, DerefMut)]
+pub struct ViewContext<'a, V> {
+    #[deref]
+    #[deref_mut]
+    cx: &'a mut ModelContext<'a, V>,
+    window: &'a mut Window,
 }
 
-impl<V> Borrow<AppContext> for ViewContext<'_, '_, '_, V> {
+impl<V> Borrow<AppContext> for ViewContext<'_, V> {
     fn borrow(&self) -> &AppContext {
         &*self.cx
     }
 }
 
-impl<V> BorrowMut<AppContext> for ViewContext<'_, '_, '_, V> {
+impl<V> BorrowMut<AppContext> for ViewContext<'_, V> {
     fn borrow_mut(&mut self) -> &mut AppContext {
         &mut *self.cx
     }
 }
 
-impl<V> Borrow<Window> for ViewContext<'_, '_, '_, V> {
+impl<V> Borrow<Window> for ViewContext<'_, V> {
     fn borrow(&self) -> &Window {
         &*self.window
     }
 }
 
-impl<V> BorrowMut<Window> for ViewContext<'_, '_, '_, V> {
+impl<V> BorrowMut<Window> for ViewContext<'_, V> {
     fn borrow_mut(&mut self) -> &mut Window {
         &mut *self.window
     }
 }
 
-impl<'a, 'b, 'c, V: 'static> ViewContext<'a, 'b, 'c, V> {
-    pub(crate) fn new(cx: &'a mut ModelContext<'a, 'b, V>, window: &'c mut Window) -> Self {
+impl<'a, V: 'static> ViewContext<'a, V> {
+    pub(crate) fn new(cx: &'a mut ModelContext<'a, V>, window: &'a mut Window) -> Self {
         Self { cx, window }
     }
 
@@ -6895,7 +6907,7 @@ impl<'a, 'b, 'c, V: 'static> ViewContext<'a, 'b, 'c, V> {
     pub fn observe<V2, E>(
         &mut self,
         entity: &E,
-        mut on_notify: impl FnMut(&mut V, E, &mut ViewContext<'_, '_, '_, V>) + 'static,
+        mut on_notify: impl FnMut(&mut V, E, &mut ModelContext<'_, V>) + 'static,
     ) -> Subscription
     where
         V2: 'static,
@@ -6929,7 +6941,7 @@ impl<'a, 'b, 'c, V: 'static> ViewContext<'a, 'b, 'c, V> {
     pub fn subscribe<V2, E, Evt>(
         &mut self,
         entity: &E,
-        mut on_event: impl FnMut(&mut V, E, &Evt, &mut ViewContext<'_, '_, '_, V>) + 'static,
+        mut on_event: impl FnMut(&mut V, E, &Evt, &mut ModelContext<'_, V>) + 'static,
     ) -> Subscription
     where
         V2: EventEmitter<Evt>,
@@ -6985,7 +6997,7 @@ impl<'a, 'b, 'c, V: 'static> ViewContext<'a, 'b, 'c, V> {
     pub fn observe_release<V2, E>(
         &self,
         entity: &E,
-        mut on_release: impl FnMut(&mut V, &mut V2, &mut ViewContext<'_, '_, '_, V>) + 'static,
+        mut on_release: impl FnMut(&mut V, &mut V2, &mut ModelContext<'_, V>) + 'static,
     ) -> Subscription
     where
         V: 'static,
@@ -7011,7 +7023,8 @@ impl<'a, 'b, 'c, V: 'static> ViewContext<'a, 'b, 'c, V> {
     /// Indicate that this view has changed, which will invoke any observers and also mark the window as dirty.
     /// If this view or any of its ancestors are *cached*, notifying it will cause it or its ancestors to be redrawn.
     pub fn notify(&mut self) {
-        self.app.notify(Some(self.entity.entity_id()));
+        todo!()
+        // self.cx.notify(Some(self.entity.entity_id()));
     }
 
     /// Register a callback to be invoked when the window is resized.
@@ -7228,13 +7241,15 @@ impl<'a, 'b, 'c, V: 'static> ViewContext<'a, 'b, 'c, V> {
         Fut: Future<Output = R> + 'static,
     {
         let view = self.view().downgrade();
-        self.app.spawn(|cx| f(view, cx))
+        let window = self.window.handle;
+        self.app
+            .spawn(|cx| f(view, AsyncWindowContext::new(cx, window)))
     }
 
     /// Register a callback to be invoked when the given global state changes.
     pub fn observe_global<G: Global>(
         &mut self,
-        mut f: impl FnMut(&mut V, &mut ViewContext<'_, '_, '_, V>) + 'static,
+        mut f: impl for<'f> FnMut(&mut V, &mut ViewContext<'f, V>) + 'static,
     ) -> Subscription {
         let window_handle = self.window.handle;
         let view = self.view().downgrade();
@@ -7254,14 +7269,17 @@ impl<'a, 'b, 'c, V: 'static> ViewContext<'a, 'b, 'c, V> {
     pub fn on_action(
         &mut self,
         action_type: TypeId,
-        listener: impl Fn(&mut V, &dyn Any, DispatchPhase, &mut ViewContext<V>) + 'static,
+        listener: impl for<'f> Fn(&mut V, &dyn Any, DispatchPhase, &mut ViewContext<'f, V>) + 'static,
     ) {
+        todo!()
+        /*
         let handle = self.view().clone();
         self.app.on_action(action_type, move |action, phase, cx| {
             handle.update(cx, |view, cx| {
                 listener(view, action, phase, cx);
             })
         });
+        */
     }
 
     /// Emit an event to be handled by any other views that have subscribed via [ViewContext::subscribe].
@@ -7307,15 +7325,16 @@ impl<'a, 'b, 'c, V: 'static> ViewContext<'a, 'b, 'c, V> {
     }
 }
 
-impl<V> Context for ViewContext<'_, '_, '_, V> {
+impl<V> Context for ViewContext<'_, V> {
     type Result<U> = U;
-    type EntityContext<'a, 'b, T: 'static> = ViewContext<'a, T>;
+    type EntityContext<'f, T: 'static> = ViewContext<'f, T>;
 
     fn new_model<T: 'static>(
         &mut self,
-        build_model: impl FnOnce(&mut ViewContext<'_, '_, T>) -> T,
+        build_model: impl for<'f> FnOnce(&mut ViewContext<'f, T>) -> T,
     ) -> Model<T> {
-        self.app.new_model(build_model)
+        todo!()
+        // self.app.new_model(build_model)
     }
 
     fn reserve_model<T: 'static>(&mut self) -> Self::Result<crate::Reservation<T>> {
@@ -7325,17 +7344,19 @@ impl<V> Context for ViewContext<'_, '_, '_, V> {
     fn insert_model<T: 'static>(
         &mut self,
         reservation: crate::Reservation<T>,
-        build_model: impl FnOnce(&mut ViewContext<'_, '_, T>) -> T,
+        build_model: impl for<'f> FnOnce(&mut ViewContext<'f, T>) -> T,
     ) -> Self::Result<Model<T>> {
-        self.app.insert_model(reservation, build_model)
+        todo!()
+        // self.app.insert_model(reservation, build_model)
     }
 
     fn update_model<T: 'static, R>(
         &mut self,
         model: &Model<T>,
-        update: impl FnOnce(&mut T, &mut ViewContext<'_, '_, T>) -> R,
+        update: impl for<'f> FnOnce(&mut T, &mut ViewContext<'f, T>) -> R,
     ) -> R {
-        self.app.update_model(model, update)
+        todo!()
+        // self.app.update_model(model, update)
     }
 
     fn read_model<T, R>(
@@ -7349,10 +7370,11 @@ impl<V> Context for ViewContext<'_, '_, '_, V> {
         self.app.read_model(handle, read)
     }
 
-    fn update_window<T, F>(&mut self, window: AnyWindowHandle, update: F) -> Result<T>
-    where
-        F: FnOnce(AnyView, &mut WindowContext<'_>) -> T,
-    {
+    fn update_window<T>(
+        &mut self,
+        window: AnyWindowHandle,
+        update: impl for<'f> FnOnce(AnyView, &mut WindowContext<'f>) -> T,
+    ) -> Result<T> {
         self.app.update_window(window, update)
     }
 
@@ -7368,52 +7390,38 @@ impl<V> Context for ViewContext<'_, '_, '_, V> {
     }
 }
 
-impl<V: 'static> VisualContext for ViewContext<'_, '_, '_, V> {
+impl<V: 'static> VisualContext for ViewContext<'_, V> {
     fn new_view<W: Render + 'static>(
         &mut self,
-        build_view_state: impl FnOnce(&mut ViewContext<'_, '_, W>) -> W,
+        build_view_state: impl FnOnce(&mut ViewContext<'_, W>) -> W,
     ) -> Self::Result<Model<W>> {
-        self.app.new_view(build_view_state)
+        self.window_context().new_view(build_view_state)
     }
 
     fn update_view<V2: 'static, R>(
         &mut self,
         view: &Model<V2>,
-        update: impl FnOnce(&mut V2, &mut ViewContext<'_, '_, V2>) -> R,
+        update: impl FnOnce(&mut V2, &mut ViewContext<'_, V2>) -> R,
     ) -> Self::Result<R> {
-        self.app.update_view(view, update)
+        self.window_context().update_view(view, update)
     }
 
     fn replace_root_view<W>(
         &mut self,
-        build_view: impl FnOnce(&mut ViewContext<'_, '_, W>) -> W,
+        build_view: impl FnOnce(&mut ViewContext<'_, W>) -> W,
     ) -> Self::Result<Model<W>>
     where
         W: 'static + Render,
     {
-        self.app.replace_root_view(build_view)
+        self.window_context().replace_root_view(build_view)
     }
 
     fn focus_view<W: FocusableView>(&mut self, view: &Model<W>) -> Self::Result<()> {
-        self.app.focus_view(view)
+        self.window_context().focus_view(view)
     }
 
     fn dismiss_view<W: ManagedView>(&mut self, view: &Model<W>) -> Self::Result<()> {
-        self.app.dismiss_view(view)
-    }
-}
-
-impl<'a, 'b, V> std::ops::Deref for ViewContext<'a, 'b, '_, V> {
-    type Target = ModelContext<'a, 'b, V>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.cx
-    }
-}
-
-impl<V> std::ops::DerefMut for ViewContext<'_, '_, '_, V> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.cx
+        self.window_context().dismiss_view(view)
     }
 }
 
@@ -7479,17 +7487,20 @@ impl<V: 'static + Render> WindowHandle<V> {
     pub fn update<C, R>(
         &self,
         cx: &mut C,
-        update: impl FnOnce(&mut V, &mut ViewContext<'_, '_, '_, V>) -> R,
+        update: impl for<'f> FnOnce(&mut V, &mut ModelContext<'f, V>) -> R,
     ) -> Result<R>
     where
         C: Context,
     {
+        todo!()
+        /*
         cx.update_window(self.any_handle, |root_view, cx| {
             let view = root_view
                 .downcast::<V>()
                 .map_err(|_| anyhow!("the type of the window's root view has changed"))?;
             Ok(cx.update_view(&view, update))
         })?
+        */
     }
 
     /// Read the root view out of this window.
@@ -7604,7 +7615,7 @@ impl AnyWindowHandle {
     pub fn update<C, R>(
         self,
         cx: &mut C,
-        update: impl FnOnce(AnyView, &mut WindowContext<'_>) -> R,
+        update: impl for<'f> FnOnce(AnyView, &mut WindowContext<'f>) -> R,
     ) -> Result<R>
     where
         C: Context,

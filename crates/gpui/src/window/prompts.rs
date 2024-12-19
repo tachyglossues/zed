@@ -4,7 +4,7 @@ use futures::channel::oneshot;
 
 use crate::{
     div, opaque_grey, white, AnyView, EventEmitter, FocusHandle, FocusableView, InteractiveElement,
-    IntoElement, ParentElement, PromptLevel, Render, StatefulInteractiveElement, Styled, Model,
+    IntoElement, Model, ParentElement, PromptLevel, Render, StatefulInteractiveElement, Styled,
     ViewContext, VisualContext, WindowContext,
 };
 

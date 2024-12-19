@@ -413,17 +413,16 @@ impl AppContext {
         self.pending_effects.push_back(Effect::Refresh);
     }
 
-    pub(crate) fn update<'a, R>(&'a mut self, update: impl FnOnce(&'a mut Self) -> R) -> R {
-        todo!()
-        // self.pending_updates += 1;
-        // let result = update(self);
-        // if !self.flushing_effects && self.pending_updates == 1 {
-        //     self.flushing_effects = true;
-        //     self.flush_effects();
-        //     self.flushing_effects = false;
-        // }
-        // self.pending_updates -= 1;
-        // result
+    pub(crate) fn update<R>(&mut self, update: impl for<'f> FnOnce(&mut Self) -> R) -> R {
+        self.pending_updates += 1;
+        let result = update(self);
+        if !self.flushing_effects && self.pending_updates == 1 {
+            self.flushing_effects = true;
+            self.flush_effects();
+            self.flushing_effects = false;
+        }
+        self.pending_updates -= 1;
+        result
     }
 
     /// Arrange a callback to be invoked when the given model or view calls `notify` on its respective context.
@@ -1414,30 +1413,18 @@ impl AppContext {
     pub fn get_name(&self) -> &'static str {
         self.name.as_ref().unwrap()
     }
-
-    fn insert_model2<'a, T: 'static>(
-        &'a mut self,
-        reservation: Reservation<T>,
-        build_model: impl FnOnce(&mut ModelContext<'a, 'b, T>) -> T,
-    ) -> Model<T> {
-        self.update(|cx| {
-            let slot = reservation.0;
-            let entity = build_model(&mut ModelContext::new(cx, &slot));
-            cx.entities.insert(slot, entity)
-        })
-    }
 }
 
 impl Context for AppContext {
     type Result<T> = T;
-    type EntityContext<'a, 'b, T: 'static> = ModelContext<'a, 'b, T>;
+    type EntityContext<'a, T: 'static> = ModelContext<'a, T>;
 
     /// Build an entity that is owned by the application. The given function will be invoked with
     /// a `ModelContext` and must return an object representing the entity. A `Model` handle will be returned,
     /// which can be used to access the entity in a context.
-    fn new_model<T: 'static>(
-        &mut self,
-        build_model: impl FnOnce(&mut ModelContext<'_, T>) -> T,
+    fn new_model<'a, T: 'static>(
+        &'a mut self,
+        build_model: impl for<'f> FnOnce(&mut ModelContext<'f, T>) -> T,
     ) -> Model<T> {
         self.update(|cx| {
             let slot = cx.entities.reserve();
@@ -1466,7 +1453,7 @@ impl Context for AppContext {
     fn insert_model<T: 'static>(
         &mut self,
         reservation: Reservation<T>,
-        build_model: impl FnOnce(&mut ModelContext<'_, T>) -> T,
+        build_model: impl for<'f> FnOnce(&mut ModelContext<'f, T>) -> T,
     ) -> Self::Result<Model<T>> {
         self.update(|cx| {
             let slot = reservation.0;
@@ -1480,7 +1467,7 @@ impl Context for AppContext {
     fn update_model<T: 'static, R>(
         &mut self,
         model: &Model<T>,
-        update: impl FnOnce(&mut T, &mut ModelContext<'_, T>) -> R,
+        update: impl for<'f> FnOnce(&mut T, &mut ModelContext<'f, T>) -> R,
     ) -> R {
         self.update(|cx| {
             let mut entity = cx.entities.lease(model);
@@ -1502,10 +1489,11 @@ impl Context for AppContext {
         read(entity, self)
     }
 
-    fn update_window<T, F>(&mut self, handle: AnyWindowHandle, update: F) -> Result<T>
-    where
-        F: FnOnce(AnyView, &mut WindowContext<'_>) -> T,
-    {
+    fn update_window<T>(
+        &mut self,
+        handle: AnyWindowHandle,
+        update: impl for<'f> FnOnce(AnyView, &mut WindowContext<'f>) -> T,
+    ) -> Result<T> {
         self.update(|cx| {
             let mut window = cx
                 .windows

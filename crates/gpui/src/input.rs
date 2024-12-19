@@ -1,4 +1,4 @@
-use crate::{Bounds, InputHandler, Pixels, UTF16Selection, Model, ViewContext, WindowContext};
+use crate::{Bounds, InputHandler, Model, Pixels, UTF16Selection, ViewContext, WindowContext};
 use std::ops::Range;
 
 /// Implement this trait to allow views to handle textual input when implementing an editor, field, etc.

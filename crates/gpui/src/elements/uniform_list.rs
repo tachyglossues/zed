@@ -7,7 +7,7 @@
 use crate::{
     point, size, AnyElement, AvailableSpace, Bounds, ContentMask, Element, ElementId,
     GlobalElementId, Hitbox, InteractiveElement, Interactivity, IntoElement, IsZero, LayoutId,
-    ListSizingBehavior, Pixels, Render, ScrollHandle, Size, StyleRefinement, Styled, Model,
+    ListSizingBehavior, Model, Pixels, Render, ScrollHandle, Size, StyleRefinement, Styled,
     ViewContext, WindowContext,
 };
 use smallvec::SmallVec;
