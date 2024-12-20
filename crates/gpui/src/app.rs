@@ -1414,30 +1414,18 @@ impl AppContext {
     pub fn get_name(&self) -> &'static str {
         self.name.as_ref().unwrap()
     }
-
-    fn insert_model2<'a, T: 'static>(
-        &'a mut self,
-        reservation: Reservation<T>,
-        build_model: impl FnOnce(&mut ModelContext<'a, 'b, T>) -> T,
-    ) -> Model<T> {
-        self.update(|cx| {
-            let slot = reservation.0;
-            let entity = build_model(&mut ModelContext::new(cx, &slot));
-            cx.entities.insert(slot, entity)
-        })
-    }
 }
 
-impl Context for AppContext {
+impl<'a, 'm, 'w> Context<'a, 'm, 'w> for AppContext {
     type Result<T> = T;
-    type EntityContext<'a, 'b, T: 'static> = ModelContext<'a, 'b, T>;
+    type EntityContext<T: 'static> = ModelContext<'a, 'm, T>;
 
     /// Build an entity that is owned by the application. The given function will be invoked with
     /// a `ModelContext` and must return an object representing the entity. A `Model` handle will be returned,
     /// which can be used to access the entity in a context.
     fn new_model<T: 'static>(
-        &mut self,
-        build_model: impl FnOnce(&mut ModelContext<'_, T>) -> T,
+        &'m mut self,
+        build_model: impl FnOnce(&mut ModelContext<'a, 'm, T>) -> T,
     ) -> Model<T> {
         self.update(|cx| {
             let slot = cx.entities.reserve();
@@ -1466,7 +1454,7 @@ impl Context for AppContext {
     fn insert_model<T: 'static>(
         &mut self,
         reservation: Reservation<T>,
-        build_model: impl FnOnce(&mut ModelContext<'_, T>) -> T,
+        build_model: impl FnOnce(&mut ModelContext<'a, 'm, T>) -> T,
     ) -> Self::Result<Model<T>> {
         self.update(|cx| {
             let slot = reservation.0;
@@ -1480,7 +1468,7 @@ impl Context for AppContext {
     fn update_model<T: 'static, R>(
         &mut self,
         model: &Model<T>,
-        update: impl FnOnce(&mut T, &mut ModelContext<'_, T>) -> R,
+        update: impl FnOnce(&mut T, &mut ModelContext<'a, 'm, T>) -> R,
     ) -> R {
         self.update(|cx| {
             let mut entity = cx.entities.lease(model);

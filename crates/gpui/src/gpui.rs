@@ -157,7 +157,7 @@ use taffy::TaffyLayoutEngine;
 
 /// The context trait, allows the different contexts in GPUI to be used
 /// interchangeably for certain operations.
-pub trait Context {
+pub trait Context<'a, 'm, 'w> {
     /// The result type for this context, used for async contexts that
     /// can't hold a direct reference to the application context.
     type Result<T>;
@@ -165,12 +165,12 @@ pub trait Context {
     /// Defines the context type used when updating an entity within this context.
     /// This associated type specifies the appropriate context for entity updates,
     /// allowing for context-specific operations and ensuring type safety.
-    type EntityContext<'a, 'b, 'c, T: 'static>;
+    type EntityContext<T: 'static>;
 
     /// Create a new model in the app context.
     fn new_model<T: 'static>(
-        &mut self,
-        build_model: impl FnOnce(&mut Self::EntityContext<'_, '_, '_, T>) -> T,
+        &'m mut self,
+        build_model: impl FnOnce(&mut Self::EntityContext<T>) -> T,
     ) -> Self::Result<Model<T>>;
 
     /// Reserve a slot for a model to be inserted later.
@@ -181,16 +181,16 @@ pub trait Context {
     ///
     /// [`reserve_model`]: Self::reserve_model
     fn insert_model<T: 'static>(
-        &mut self,
+        &'m mut self,
         reservation: Reservation<T>,
-        build_model: impl FnOnce(&mut Self::EntityContext<'_, '_, '_, T>) -> T,
+        build_model: impl FnOnce(&mut Self::EntityContext<T>) -> T,
     ) -> Self::Result<Model<T>>;
 
     /// Update a model in the app context.
     fn update_model<T, R>(
-        &mut self,
+        &'m mut self,
         handle: &Model<T>,
-        update: impl FnOnce(&mut T, &mut Self::EntityContext<'_, '_, '_, T>) -> R,
+        update: impl FnOnce(&mut T, &mut Self::EntityContext<T>) -> R,
     ) -> Self::Result<R>
     where
         T: 'static;
@@ -232,11 +232,11 @@ impl<T: 'static> Reservation<T> {
 
 /// This trait is used for the different visual contexts in GPUI that
 /// require a window to be present.
-pub trait VisualContext: Context {
+pub trait VisualContext<'a, 'm, 'w>: Context<'a, 'm, 'w> {
     /// Construct a new view in the window referenced by this context.
     fn new_view<V>(
         &mut self,
-        build_view: impl FnOnce(&mut ViewContext<'_, '_, V>) -> V,
+        build_view: impl FnOnce(&mut ViewContext<'a, 'm, 'w, V>) -> V,
     ) -> Self::Result<Model<V>>
     where
         V: 'static + Render;
@@ -245,13 +245,13 @@ pub trait VisualContext: Context {
     fn update_view<V: 'static, R>(
         &mut self,
         view: &Model<V>,
-        update: impl FnOnce(&mut V, &mut ViewContext<'_, '_, V>) -> R,
+        update: impl FnOnce(&mut V, &mut ViewContext<'a, 'm, 'w, V>) -> R,
     ) -> Self::Result<R>;
 
     /// Replace the root view of a window with a new view.
     fn replace_root_view<V>(
         &mut self,
-        build_view: impl FnOnce(&mut ViewContext<'_, '_, V>) -> V,
+        build_view: impl FnOnce(&mut ViewContext<'a, 'm, 'w, V>) -> V,
     ) -> Self::Result<Model<V>>
     where
         V: 'static + Render;

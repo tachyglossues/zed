@@ -6573,13 +6573,16 @@ impl WindowContext<'_> {
     }
 }
 
-impl Context for WindowContext<'_> {
+impl<'a, 'm, 'w> Context<'a, 'm, 'w> for WindowContext<'_>
+where
+    'a: 'w,
+{
     type Result<T> = T;
-    type EntityContext<'a, 'b, T: 'static> = ViewContext<'a, 'b, T>;
+    type EntityContext<T: 'static> = ViewContext<'a, 'm, 'w, T>;
 
     fn new_model<T>(
         &mut self,
-        build_model: impl FnOnce(&mut ViewContext<'_, '_, T>) -> T,
+        build_model: impl FnOnce(&mut Self::EntityContext<T>) -> T,
     ) -> Model<T>
     where
         T: 'static,
@@ -6613,7 +6616,7 @@ impl Context for WindowContext<'_> {
     fn insert_model<T: 'static>(
         &mut self,
         reservation: crate::Reservation<T>,
-        build_model: impl FnOnce(&mut ViewContext<'_, '_, T>) -> T,
+        build_model: impl FnOnce(&mut Self::EntityContext<T>) -> T,
     ) -> Self::Result<Model<T>> {
         self.app
             .insert_model(reservation, |cx: &mut ModelContext<'_, T>| {
@@ -6627,7 +6630,7 @@ impl Context for WindowContext<'_> {
     fn update_model<T: 'static, R>(
         &mut self,
         model: &Model<T>,
-        update: impl FnOnce(&mut T, &mut ViewContext<'_, '_, T>) -> R,
+        update: impl FnOnce(&mut T, &mut Self::EntityContext<T>) -> R,
     ) -> R {
         let mut entity = self.entities.lease(model);
         let result = update(
@@ -6685,10 +6688,10 @@ impl Context for WindowContext<'_> {
     }
 }
 
-impl VisualContext for WindowContext<'_> {
+impl<'a, 'm, 'w> VisualContext<'a, 'm, 'w> for WindowContext<'_> {
     fn new_view<V>(
         &mut self,
-        build_view_state: impl FnOnce(&mut ViewContext<'_, '_, '_, V>) -> V,
+        build_view_state: impl FnOnce(&mut Self::EntityContext<V>) -> V,
     ) -> Self::Result<Model<V>>
     where
         V: 'static + Render,
@@ -6714,7 +6717,7 @@ impl VisualContext for WindowContext<'_> {
     fn update_view<T: 'static, R>(
         &mut self,
         view: &Model<T>,
-        update: impl FnOnce(&mut T, &mut ViewContext<'_, '_, T>) -> R,
+        update: impl FnOnce(&mut T, &mut Self::EntityContext<T>) -> R,
     ) -> Self::Result<R> {
         let mut lease = self.app.entities.lease(view);
         let mut cx = ViewContext::new(&mut *self.cx, &mut *self.window, view);
@@ -6725,7 +6728,7 @@ impl VisualContext for WindowContext<'_> {
 
     fn replace_root_view<V>(
         &mut self,
-        build_view: impl FnOnce(&mut ViewContext<'_, '_, '_, V>) -> V,
+        build_view: impl FnOnce(&mut Self::EntityContext<V>) -> V,
     ) -> Self::Result<Model<V>>
     where
         V: 'static + Render,
@@ -6817,9 +6820,9 @@ impl<T> BorrowWindow for T where T: BorrowMut<AppContext> + BorrowMut<Window> {}
 /// Allows you to interact with focus, emit events, etc.
 /// ViewContext also derefs to [`WindowContext`], giving you access to all of its methods as well.
 /// When you call [`View::update`], you're passed a `&mut V` and an `&mut ViewContext<V>`.
-pub struct ViewContext<'a, 'b, 'c, V> {
-    cx: &'a mut ModelContext<'a, 'b, V>,
-    window: &'c mut Window,
+pub struct ViewContext<'a, 'm, 'w, V> {
+    cx: &'m mut ModelContext<'a, 'm, V>,
+    window: &'w mut Window,
 }
 
 impl<V> Borrow<AppContext> for ViewContext<'_, '_, '_, V> {
@@ -7307,9 +7310,9 @@ impl<'a, 'b, 'c, V: 'static> ViewContext<'a, 'b, 'c, V> {
     }
 }
 
-impl<V> Context for ViewContext<'_, '_, '_, V> {
+impl<'a, 'm, 'w, V> Context<'a, 'm, 'w> for ViewContext<'_, '_, '_, V> {
     type Result<U> = U;
-    type EntityContext<'a, 'b, T: 'static> = ViewContext<'a, T>;
+    type EntityContext<T: 'static> = ViewContext<'a, 'm, 'w, T>;
 
     fn new_model<T: 'static>(
         &mut self,

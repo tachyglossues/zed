@@ -29,13 +29,13 @@ pub struct TestAppContext {
     on_quit: Rc<RefCell<Vec<Box<dyn FnOnce() + 'static>>>>,
 }
 
-impl Context for TestAppContext {
+impl<'a, 'm, 'w> Context<'a, 'm, 'w> for TestAppContext {
     type Result<T> = T;
-    type EntityContext<'a, 'b, T: 'static> = ModelContext<'a, 'b, T>;
+    type EntityContext<T: 'static> = ModelContext<'a, 'm, T>;
 
     fn new_model<T: 'static>(
         &mut self,
-        build_model: impl FnOnce(&mut ModelContext<'_, T>) -> T,
+        build_model: impl FnOnce(&mut Self::EntityContext<T>) -> T,
     ) -> Self::Result<Model<T>> {
         let mut app = self.app.borrow_mut();
         app.new_model(build_model)
@@ -49,7 +49,7 @@ impl Context for TestAppContext {
     fn insert_model<T: 'static>(
         &mut self,
         reservation: crate::Reservation<T>,
-        build_model: impl FnOnce(&mut ModelContext<'_, T>) -> T,
+        build_model: impl FnOnce(&mut Self::EntityContext<T>) -> T,
     ) -> Self::Result<Model<T>> {
         let mut app = self.app.borrow_mut();
         app.insert_model(reservation, build_model)
@@ -58,7 +58,7 @@ impl Context for TestAppContext {
     fn update_model<T: 'static, R>(
         &mut self,
         handle: &Model<T>,
-        update: impl FnOnce(&mut T, &mut ModelContext<'_, T>) -> R,
+        update: impl FnOnce(&mut T, &mut Self::EntityContext<T>) -> R,
     ) -> Self::Result<R> {
         let mut app = self.app.borrow_mut();
         app.update_model(handle, update)
@@ -875,13 +875,17 @@ impl VisualTestContext {
     }
 }
 
-impl Context for VisualTestContext {
-    type Result<T> = <TestAppContext as Context>::Result<T>;
-    type EntityContext<'a, 'b, T: 'static> = ViewContext<'a, 'b, T>;
+impl<'a, 'm, 'w> Context<'a, 'm, 'w> for VisualTestContext
+where
+    'a: 'w,
+    'w: 'm,
+{
+    type Result<T> = <TestAppContext as Context<'a, 'm, 'w>>::Result<T>;
+    type EntityContext<T: 'static> = ViewContext<'a, 'm, 'w, T>;
 
     fn new_model<T: 'static>(
         &mut self,
-        build_model: impl FnOnce(&mut ViewContext<'_, '_, T>) -> T,
+        build_model: impl FnOnce(&mut Self::EntityContext<T>) -> T,
     ) -> Self::Result<Model<T>> {
         self.cx
             .update_window(self.window, |_, cx| cx.new_model(build_model))
@@ -895,7 +899,7 @@ impl Context for VisualTestContext {
     fn insert_model<T: 'static>(
         &mut self,
         reservation: crate::Reservation<T>,
-        build_model: impl FnOnce(&mut ViewContext<'_, '_, T>) -> T,
+        build_model: impl FnOnce(&mut Self::EntityContext<T>) -> T,
     ) -> Self::Result<Model<T>> {
         self.cx
             .update_window(self.window, |_, cx| {
@@ -907,7 +911,7 @@ impl Context for VisualTestContext {
     fn update_model<T, R>(
         &mut self,
         handle: &Model<T>,
-        update: impl FnOnce(&mut T, &mut ViewContext<'_, '_, T>) -> R,
+        update: impl FnOnce(&mut T, &mut Self::EntityContext<T>) -> R,
     ) -> Self::Result<R>
     where
         T: 'static,
@@ -947,10 +951,10 @@ impl Context for VisualTestContext {
     }
 }
 
-impl VisualContext for VisualTestContext {
+impl<'a, 'm, 'w> VisualContext<'a, 'm, 'w> for VisualTestContext {
     fn new_view<V>(
         &mut self,
-        build_view: impl FnOnce(&mut ViewContext<'_, '_, V>) -> V,
+        build_view: impl FnOnce(&mut Self::EntityContext<V>) -> V,
     ) -> Self::Result<Model<V>>
     where
         V: 'static + Render,
@@ -963,7 +967,7 @@ impl VisualContext for VisualTestContext {
     fn update_view<V: 'static, R>(
         &mut self,
         view: &Model<V>,
-        update: impl FnOnce(&mut V, &mut ViewContext<'_, '_, V>) -> R,
+        update: impl FnOnce(&mut V, &mut Self::EntityContext<V>) -> R,
     ) -> Self::Result<R> {
         self.window
             .update(&mut self.cx, |_, cx| cx.update_view(view, update))
@@ -972,7 +976,7 @@ impl VisualContext for VisualTestContext {
 
     fn replace_root_view<V>(
         &mut self,
-        build_view: impl FnOnce(&mut ViewContext<'_, '_, V>) -> V,
+        build_view: impl FnOnce(&mut Self::EntityContext<V>) -> V,
     ) -> Self::Result<Model<V>>
     where
         V: 'static + Render,
@@ -1007,7 +1011,7 @@ impl AnyWindowHandle {
     pub fn build_view<V: Render + 'static>(
         &self,
         cx: &mut TestAppContext,
-        build_view: impl FnOnce(&mut ViewContext<'_, '_, V>) -> V,
+        build_view: impl FnOnce(&mut ViewContext<V>) -> V,
     ) -> Model<V> {
         self.update(cx, |_, cx| cx.new_view(build_view)).unwrap()
     }

@@ -398,7 +398,7 @@ impl<T: 'static> Model<T> {
     }
 
     /// Read the entity referenced by this model with the given function.
-    pub fn read_with<R, C: Context>(
+    pub fn read_with<'a, 'm, 'w, R, C: Context<'a, 'm, 'w>>(
         &self,
         cx: &C,
         f: impl FnOnce(&T, &AppContext) -> R,
@@ -411,13 +411,13 @@ impl<T: 'static> Model<T> {
     /// The update function receives a context appropriate for its environment.
     /// When updating in an `AppContext`, it receives a `ModelContext`.
     /// When updating in a `WindowContext`, it receives a `ViewContext`.
-    pub fn update<C, R>(
+    pub fn update<'a, 'm, 'w, C, R>(
         &self,
         cx: &mut C,
-        update: impl FnOnce(&mut T, &mut C::EntityContext<'_, '_, T>) -> R,
+        update: impl FnOnce(&mut T, &mut C::EntityContext<T>) -> R,
     ) -> C::Result<R>
     where
-        C: Context,
+        C: Context<'a, 'm, 'w>,
     {
         cx.update_model(self, update)
     }
@@ -605,13 +605,13 @@ impl<T: 'static> WeakModel<T> {
     /// Updates the entity referenced by this model with the given function if
     /// the referenced entity still exists. Returns an error if the entity has
     /// been released.
-    pub fn update<C, R>(
+    pub fn update<'a, 'm, 'w, C, R>(
         &self,
         cx: &mut C,
-        update: impl FnOnce(&mut T, &mut C::EntityContext<'_, '_, T>) -> R,
+        update: impl FnOnce(&mut T, &mut C::EntityContext<T>) -> R,
     ) -> Result<R>
     where
-        C: Context,
+        C: Context<'a, 'm, 'w>,
         Result<C::Result<R>>: crate::Flatten<R>,
     {
         crate::Flatten::flatten(
@@ -624,9 +624,13 @@ impl<T: 'static> WeakModel<T> {
     /// Reads the entity referenced by this model with the given function if
     /// the referenced entity still exists. Returns an error if the entity has
     /// been released.
-    pub fn read_with<C, R>(&self, cx: &C, read: impl FnOnce(&T, &AppContext) -> R) -> Result<R>
+    pub fn read_with<'a, 'm, 'w, C, R>(
+        &self,
+        cx: &C,
+        read: impl FnOnce(&T, &AppContext) -> R,
+    ) -> Result<R>
     where
-        C: Context,
+        C: Context<'a, 'm, 'w>,
         Result<C::Result<R>>: crate::Flatten<R>,
     {
         crate::Flatten::flatten(

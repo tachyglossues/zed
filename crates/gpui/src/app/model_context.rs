@@ -13,15 +13,15 @@ use std::{
 
 /// The app context, with specialized behavior for the given model.
 #[derive(Deref, DerefMut)]
-pub struct ModelContext<'a, 'b, T> {
+pub struct ModelContext<'a, 'm, T> {
     #[deref]
     #[deref_mut]
     pub(crate) app: &'a mut AppContext,
-    pub(crate) entity: &'b Model<T>,
+    pub(crate) entity: &'m Model<T>,
 }
 
-impl<'a, 'b, T: 'static> ModelContext<'a, 'b, T> {
-    pub(crate) fn new(app: &'a mut AppContext, model_state: &'b Model<T>) -> Self {
+impl<'a, 'm, T: 'static> ModelContext<'a, 'm, T> {
+    pub(crate) fn new(app: &'a mut AppContext, model_state: &'m Model<T>) -> Self {
         Self {
             app,
             entity: model_state,
@@ -210,7 +210,7 @@ impl<'a, 'b, T: 'static> ModelContext<'a, 'b, T> {
     }
 }
 
-impl<'a, 'b, T> ModelContext<'a, 'b, T> {
+impl<'a, 'm, T> ModelContext<'a, 'm, T> {
     /// Emit an event of the specified type, which can be handled by other entities that have subscribed via `subscribe` methods on their respective contexts.
     pub fn emit<Evt>(&mut self, event: Evt)
     where
@@ -225,13 +225,13 @@ impl<'a, 'b, T> ModelContext<'a, 'b, T> {
     }
 }
 
-impl<'a, 'b, T> Context for ModelContext<'a, 'b, T> {
+impl<'a, 'm, 'w, T> Context<'a, 'm, 'w> for ModelContext<'a, 'm, T> {
     type Result<U> = U;
-    type EntityContext<'c, 'd, U: 'static> = ModelContext<'c, 'd, U>;
+    type EntityContext<U: 'static> = ModelContext<'a, 'm, U>;
 
     fn new_model<U: 'static>(
         &mut self,
-        build_model: impl FnOnce(&mut Self::EntityContext<'_, '_, U>) -> U,
+        build_model: impl FnOnce(&mut ModelContext<'a, 'm, U>) -> U,
     ) -> Model<U> {
         self.app.new_model(build_model)
     }
@@ -243,7 +243,7 @@ impl<'a, 'b, T> Context for ModelContext<'a, 'b, T> {
     fn insert_model<U: 'static>(
         &mut self,
         reservation: Reservation<U>,
-        build_model: impl FnOnce(&mut ModelContext<'_, '_, U>) -> U,
+        build_model: impl FnOnce(&mut ModelContext<'a, 'm, U>) -> U,
     ) -> Self::Result<Model<U>> {
         self.app.insert_model(reservation, build_model)
     }
@@ -251,7 +251,7 @@ impl<'a, 'b, T> Context for ModelContext<'a, 'b, T> {
     fn update_model<U: 'static, R>(
         &mut self,
         handle: &Model<U>,
-        update: impl FnOnce(&mut U, &mut ModelContext<'_, '_, U>) -> R,
+        update: impl FnOnce(&mut U, &mut ModelContext<'a, 'm, U>) -> R,
     ) -> R {
         self.app.update_model(handle, update)
     }
