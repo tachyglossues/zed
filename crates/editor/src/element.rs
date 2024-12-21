@@ -1,6 +1,9 @@
 use crate::{
     blame_entry_tooltip::{blame_entry_relative_timestamp, BlameEntryTooltip},
-    code_context_menus::{CodeActionsMenu, MAX_COMPLETIONS_ASIDE_WIDTH},
+    code_context_menus::{
+        CodeActionsMenu, COMPLETIONS_ASIDE_X_PADDING, MAX_COMPLETIONS_ASIDE_WIDTH,
+        MIN_COMPLETIONS_ASIDE_WIDTH,
+    },
     display_map::{
         Block, BlockContext, BlockStyle, DisplaySnapshot, HighlightedChunk, ToDisplayPoint,
     },
@@ -2992,43 +2995,37 @@ impl EditorElement {
         };
         cx.defer_draw(menu_element, menu_position, 1);
 
-        let aside_element = self.editor.update(cx, |editor, cx| {
-            editor.render_context_menu_aside(&self.style, unconstrained_max_height, cx)
-        });
-        if let Some(aside_element) = aside_element {
-            let menu_bounds = Bounds::new(menu_position, menu_size);
-            let max_menu_size = size(menu_size.width, unconstrained_max_height);
-            let max_menu_bounds = if y_is_flipped {
-                Bounds::new(
-                    point(
-                        menu_position.x,
-                        bottom_y_when_flipped - max_menu_size.height,
-                    ),
-                    max_menu_size,
-                )
-            } else {
-                Bounds::new(target_position, max_menu_size)
-            };
-
-            // Pad the target by 4 pixels to create a gap.
-            let mut extend_amount = Edges::all(px(4.));
-            // Extend to include the cursored line to avoid overlapping it.
-            if y_is_flipped {
-                extend_amount.bottom = line_height;
-            } else {
-                extend_amount.top = line_height;
-            }
-            self.layout_context_menu_aside(
-                text_hitbox,
-                y_is_flipped,
-                menu_position,
-                menu_bounds.extend(extend_amount),
-                max_menu_bounds.extend(extend_amount),
-                unconstrained_max_height,
-                aside_element,
-                cx,
-            );
+        // Layout documentation aside
+        let menu_bounds = Bounds::new(menu_position, menu_size);
+        let max_menu_size = size(menu_size.width, unconstrained_max_height);
+        let max_menu_bounds = if y_is_flipped {
+            Bounds::new(
+                point(
+                    menu_position.x,
+                    bottom_y_when_flipped - max_menu_size.height,
+                ),
+                max_menu_size,
+            )
+        } else {
+            Bounds::new(target_position, max_menu_size)
+        };
+        // Pad the target by 4 pixels to create a gap.
+        let mut extend_amount = Edges::all(px(4.));
+        // Extend to include the cursored line to avoid overlapping it.
+        if y_is_flipped {
+            extend_amount.bottom = line_height;
+        } else {
+            extend_amount.top = line_height;
         }
+        self.layout_context_menu_aside(
+            text_hitbox,
+            y_is_flipped,
+            menu_position,
+            menu_bounds.extend(extend_amount),
+            max_menu_bounds.extend(extend_amount),
+            unconstrained_max_height,
+            cx,
+        );
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -3040,63 +3037,88 @@ impl EditorElement {
         target_bounds: Bounds<Pixels>,
         max_target_bounds: Bounds<Pixels>,
         max_height: Pixels,
-        aside: AnyElement,
         cx: &mut WindowContext,
     ) {
-        let mut aside = aside;
-        let actual_size = aside.layout_as_root(AvailableSpace::min_size(), cx);
-
-        // Snap to right side of window if it would overflow.
-        let aside_x = cmp::min(
-            menu_position.x,
-            cx.viewport_size().width - actual_size.width,
-        );
-        if aside_x < px(0.) {
-            // Not enough space, skip drawing.
-            return;
-        }
-
-        let top_position = point(aside_x, target_bounds.top() - actual_size.height);
-        let bottom_position = point(aside_x, target_bounds.bottom());
-        let right_position = point(target_bounds.right(), menu_position.y);
-
-        let fit_horizontally_within = |available: Edges<Pixels>, wanted: Size<Pixels>| {
-            // Prefer to fit to the right, then on the same side of the line as the menu, then on
-            // the other side of the line.
-            if wanted.width < available.right {
-                Some(right_position)
-            } else if !y_is_flipped && wanted.height < available.bottom {
-                Some(bottom_position)
-            } else if !y_is_flipped && wanted.height < available.top {
-                Some(top_position)
-            } else if y_is_flipped && wanted.height < available.top {
-                Some(top_position)
-            } else if y_is_flipped && wanted.height < available.bottom {
-                Some(bottom_position)
-            } else {
-                None
-            }
-        };
-
-        // Prefer choosing a direction using max sizes rather than actual size for stability.
         let mut available = max_target_bounds.space_within(&text_hitbox.bounds);
-        let mut wanted = size(MAX_COMPLETIONS_ASIDE_WIDTH, max_height);
-        let aside_position = fit_horizontally_within(available, wanted)
-            .or_else(|| {
-                // Fallback: fit max size in window.
-                available = max_target_bounds
-                    .space_within(&Bounds::new(Default::default(), cx.viewport_size()));
-                fit_horizontally_within(available, wanted)
-            })
-            .or_else(|| {
-                // Fallback: fit actual size in window.
-                wanted = actual_size;
-                fit_horizontally_within(available, wanted)
-            });
+        let right_position = point(target_bounds.right(), menu_position.y);
+        let positioned_aside =
+            if available.right >= MIN_COMPLETIONS_ASIDE_WIDTH + COMPLETIONS_ASIDE_X_PADDING {
+                let max_width = cmp::min(
+                    available.right - COMPLETIONS_ASIDE_X_PADDING,
+                    MAX_COMPLETIONS_ASIDE_WIDTH,
+                );
+                let Some(mut aside) = self.editor.update(cx, |editor, cx| {
+                    let max_size = size(max_width, max_height);
+                    editor.render_context_menu_aside(&self.style, max_size, cx)
+                }) else {
+                    return;
+                };
+                aside.layout_as_root(AvailableSpace::min_size(), cx);
+                Some((aside, right_position))
+            } else {
+                let Some(mut aside) = self.editor.update(cx, |editor, cx| {
+                    let max_size = size(MAX_COMPLETIONS_ASIDE_WIDTH, max_height);
+                    editor.render_context_menu_aside(&self.style, max_size, cx)
+                }) else {
+                    return;
+                };
+                let actual_size = aside.layout_as_root(AvailableSpace::min_size(), cx);
+
+                // Snap to right side of window if it would overflow.
+                let aside_x = cmp::min(
+                    menu_position.x,
+                    cx.viewport_size().width - actual_size.width,
+                );
+                if aside_x < px(0.) {
+                    // Not enough space, skip drawing.
+                    return;
+                }
+
+                let top_position = point(aside_x, target_bounds.top() - actual_size.height);
+                let bottom_position = point(aside_x, target_bounds.bottom());
+
+                let fit_within = |available: Edges<Pixels>, wanted: Size<Pixels>| {
+                    // Prefer to fit to the right, then on the same side of the line as the menu, then
+                    // on the other side of the line.
+                    if wanted.width < available.right {
+                        Some(right_position)
+                    } else if !y_is_flipped && wanted.height < available.bottom {
+                        Some(bottom_position)
+                    } else if !y_is_flipped && wanted.height < available.top {
+                        Some(top_position)
+                    } else if y_is_flipped && wanted.height < available.top {
+                        Some(top_position)
+                    } else if y_is_flipped && wanted.height < available.bottom {
+                        Some(bottom_position)
+                    } else {
+                        None
+                    }
+                };
+
+                // Prefer choosing a direction using max sizes rather than actual size for stability.
+                let mut wanted = size(
+                    MAX_COMPLETIONS_ASIDE_WIDTH + COMPLETIONS_ASIDE_X_PADDING,
+                    max_height,
+                );
+                let aside_position = fit_within(available, wanted)
+                    .or_else(|| {
+                        // Fallback: fit max size in window.
+                        available = max_target_bounds
+                            .space_within(&Bounds::new(Default::default(), cx.viewport_size()));
+                        fit_within(available, wanted)
+                    })
+                    .or_else(|| {
+                        // Fallback: fit actual size in window.
+                        wanted = actual_size;
+                        fit_within(available, wanted)
+                    });
+
+                aside_position.map(|position| (aside, position))
+            };
 
         // Skip drawing if it doesn't fit anywhere.
-        if let Some(aside_position) = aside_position {
-            cx.defer_draw(aside, aside_position, 1);
+        if let Some((aside, position)) = positioned_aside {
+            cx.defer_draw(aside, position, 1);
         }
     }
 
